@@ -5,9 +5,12 @@
 #
 # This file is part of the "WINDoe" retrieval system.
 #
-# WINDoe is free software developed while the authors were at NOAA and is
-# intended to be free software. It is made available WITHOUT ANY WARRANTY,
-# For more information, contact the authors
+# WINDoe is free software developed while the authors were at the 
+# Cooperative Institute for Severe and High-Impact Weather Research and Operations
+# at the University of Oklahoma and funded by NOAA/Office of Oceanic and Atmospheric
+# Research under NOAA-University of Oklahoma Cooperative Agreement #NA21OAR4320204,
+# U.S. Department of Commerce. It is intended to be free software.
+# It is made available WITHOUT ANY WARRANTY, For more information, contact the authors.
 #
 # -----------------------------------------------------------------------------
 
