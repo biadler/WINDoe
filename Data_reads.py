@@ -573,9 +573,6 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                     bt = fid.variables['base_time'][0]
                     to = fid.variables['time_offset'][:]
                     elx = fid.variables['elevation'][:]
-                    
-                    if (elx[0] == 20):
-                        continue
 
                     if ((bt+np.nanmean(to) < rtime-((vip['raw_lidar_timedelta'][k]/2.)*60)) |
                             (bt+np.nanmean(to) >= rtime+((vip['raw_lidar_timedelta'][k]/2.)*60))):
