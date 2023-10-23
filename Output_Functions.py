@@ -195,7 +195,7 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
         
         if vip['proc_lidar_number'] > 0:
             pdim = fid.createDimension('proc_dim', vip['proc_lidar_number'])
-            proc_timedelta = fid.createVariables('proc_lidar_timedelta', 'f4', ('proc_dim',))
+            proc_timedelta = fid.createVariable('proc_lidar_timedelta', 'f4', ('proc_dim',))
             proc_timedelta.long_name = 'Time window for processed lidar data to be included in retrieval for each data source'
             proc_timedelta.units = 'min'
             

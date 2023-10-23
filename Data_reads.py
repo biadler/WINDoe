@@ -80,6 +80,7 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                 vrxx = None
                 vr_varxx = None
             else:
+                first_scan = True
                 for i in range(len(files)):
                     fid = Dataset(files[i], 'r')
                     bt = fid.variables['base_time'][0]
@@ -105,19 +106,25 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                     len_scan = 0
                     for m in range(len(u_snum)):
                         foo = np.where(u_snum[m] == snum)[0]
-                        if m == 0:
-                            len_scan = len(foo)
+                        
+                        temp_to = np.nanmean(to[foo])
+                        if ((bt+temp_to >= rtime-((vip['raw_lidar_timedelta'][k]/2.)*60)) &
+                            (bt+temp_to < rtime+((vip['raw_lidar_timedelta'][k]/2.)*60))):
+                        
+                        
+                            if first_scan:
+                                len_scan = len(foo)
 
-                        elif len_scan != len(foo):
-                            print('Error: Raw lidar data source ' + str(k+1) +
-                                  ' changed during period retrieval period')
-                            continue
+                            elif len_scan != len(foo):
+                                print('Error: Raw lidar data source ' + str(k+1) +
+                                      ' changed during period retrieval period')
+                                continue
 
-                        to_scan.append(np.nanmean(to[foo]))
-                        az_scan.append(azx[foo])
-                        el_scan.append(elx[foo])
-                        vr_scan.append(vrx[foo, :])
-                        snr_scan.append(snrx[foo, :])
+                            to_scan.append(np.nanmean(to[foo]))
+                            az_scan.append(azx[foo])
+                            el_scan.append(elx[foo])
+                            vr_scan.append(vrx[foo, :])
+                            snr_scan.append(snrx[foo, :])
 
                     to_scan = np.array(to_scan)
                     az_scan = np.array(az_scan)
@@ -125,23 +132,20 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                     vr_scan = np.array(vr_scan)
                     snr_scan = np.array(snr_scan)
 
-                    foo = np.where((bt+to_scan >= rtime-((vip['raw_lidar_timedelta'][k]/2.)*60)) &
-                                   (bt+to_scan < rtime+((vip['raw_lidar_timedelta'][k]/2.)*60)))[0]
-
                     # There are no times we want here so just move on
-                    if len(foo) == 0:
+                    if len(to_scan) == 0:
                         fid.close()
                         continue
 
                     fid.close()
 
                     if no_data:
-                        lsecsx = bt+to_scan[foo]
-                        rngxx = np.array([rngx]*len(to_scan[foo]))
-                        azxx = az_scan[foo]
-                        elxx = el_scan[foo]
-                        vrxx = vr_scan[foo]
-                        snrxx = snr_scan[foo]
+                        lsecsx = bt+to_scan
+                        rngxx = np.array([rngx]*len(to_scan))
+                        azxx = np.copy(az_scan)
+                        elxx = np.copy(el_scan)
+                        vrxx = np.copy(vr_scan)
+                        snrxx = np.copy(snr_scan)
                         no_data = False
 
                     else:
@@ -150,33 +154,23 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                         # and azimuth and elevation are the same. If not
                         # abort and tell user
 
-                        if ((len(rngx) != len(rngxx[0])) or
-                           (len(az_scan[foo]) != len(azxx[0])) or
-                           (len(el_scan[foo]) != len(elxx[0]))):
+                        if (len(rngx) != len(rngxx[0])):
                             print('Error: Raw lidar data source ' + str(k+1) +
                                   ' changed during period retrieval period')
                             continue
 
-                        lsecsx = np.append(lsecsx, bt+to_scan[foo])
-                        rngxx = np.append(rngxx, np.array(
-                            [rngx]*to_scan[foo]), axis=0)
-                        azxx = np.append(azxx, az_scan[foo], axis=0)
-                        elxx = np.append(elxx, el_scan[foo], axis=0)
-                        vrxx = np.append(vrxx, vr_scan[foo], axis=0)
-                        snrxx = np.append(snrxx, snr_scan[foo], axis=0)
+                        lsecsx = np.vstack((lsecsx, bt+to_scan))
+                        rngxx = np.vstack((rngxx, np.array(
+                            [rngx]*len(to_scan))))
+                        azxx = np.vstack((azxx, az_scan))
+                        elxx = np.vstack((elxx, el_scan))
+                        vrxx = np.vstack((vrxx, vr_scan))
+                        snrxx = np.append((snrxx, snr_scan))
 
                 if not no_data:
 
                     # First check that all scans are the same
                     azxx[azxx == 360] = 0
-                    faz = np.where(np.abs(azxx-azxx[0]) > 1)[0]
-                    fel = np.where(np.abs(elxx-elxx[0]) > 1)[0]
-                    frng = np.where(np.abs(rngxx-rngxx[0]) > 1)[0]
-
-                    if len(faz) > 0 or len(fel) > 0 or len(frng) > 0:
-                        print('Error: Raw lidar data source ' + str(k+1) +
-                              ' changed during period retrieval period')
-                        return {'success': -999}
 
                     # We only want to use data between min range and max range so set
                     # everything else to missing
@@ -228,11 +222,11 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                     if len(foo) > 0:
                         available[k] = 1
                     else:
-                        print('No valid ARM lidar data found')
+                        print('No valid lidar data found')
 
                     rngxx = rngxx[0]
                 else:
-                    print('No raw ARM lidar data for retrieval at this time')
+                    print('No raw lidar data for retrieval at this time')
                     lsecsx = None
                     rngxx = None
                     azxx = None
@@ -435,8 +429,13 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                         continue
 
                     rngx = fid.variables['range'][:]
-                    azx = (fid.variables['azimuth'][:] +
-                           fid.variables['heading'][:]) % 360
+                    
+                    if vip['raw_lidar_fix_heading'] == 1:
+                        azx = (fid.variables['azimuth'][:] +
+                               fid.variables['heading'][:]) % 360
+                    else:
+                        azx = fid.variables['azimuth'][:]
+                        
                     elx = fid.variables['elevation'][:]
                     vrx = fid.variables['velocity'][:, :]
                     snrx = 10*np.log10(fid.variables['intensity'][:, :] - 1)
@@ -449,11 +448,14 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                         continue
                     
                     # Need to fix the azimuths in csm files
-                    azx = azx[foo[fah]]
-                    azimuth_follow = np.concatenate((azx[1:], [azx[-1]]))
-                    for j in range(len(azx)):
-                        azx[j] = Other_functions.mean_azimuth(
-                            azx[j], azimuth_follow[j], .6)
+                    if vip['raw_lidar_fix_csm_azimuths'] == 1:
+                        azx = azx[foo[fah]]
+                        azimuth_follow = np.concatenate((azx[1:], [azx[-1]]))
+                        for j in range(len(azx)):
+                            azx[j] = Other_functions.mean_azimuth(
+                                azx[j], azimuth_follow[j], .6)
+                    else:
+                        azx = azx[foo[fah]]
 
                     if no_data:
                         lsecsx = bt+to[foo[fah]]
@@ -825,19 +827,19 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                     # Interpolate the data to the retrieval vertical grid
                     f = interpolate.interp1d(
                         zxx[:, 0], uxx, axis=0, bounds_error=False, fill_value=-999)
-                    u_interp = f(retz)
+                    u_interp = f(retz.data)
 
                     f = interpolate.interp1d(
                         zxx[:, 0], vxx, axis=0, bounds_error=False, fill_value=-999)
-                    v_interp = f(retz)
+                    v_interp = f(retz.data)
 
                     f = interpolate.interp1d(
                         zxx[:, 0], u_errx, axis=0, bounds_error=False, fill_value=-999)
-                    uerr_interp = f(retz)
+                    uerr_interp = f(retz.data)
 
                     f = interpolate.interp1d(
                         zxx[:, 0], v_errx, axis=0, bounds_error=False, fill_value=-999)
-                    verr_interp = f(retz)
+                    verr_interp = f(retz.data)
 
                     # We only want to use data between min range and max range so set
                     # everything else to missing
@@ -866,7 +868,7 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
         # and the residual of the fit for both u and v
         elif vip['proc_lidar_type'][k] == 2:
             if verbose >= 1:
-                print('Reading in unprocessed NCAR (ARM) VAD file')
+                print('Reading in processed NCAR (ARM) VAD file')
 
             dates = [(datetime.strptime(str(date), '%Y%m%d') - timedelta(days=1)).strftime('%Y%m%d'),
                      str(date),  (datetime.strptime(str(date), '%Y%m%d') + timedelta(days=1)).strftime('%Y%m%d')]
@@ -936,19 +938,19 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                     # Interpolate the data to the retrieval vertical grid
                     f = interpolate.interp1d(
                         zxx[:, 0], uxx, axis=0, bounds_error=False, fill_value=-999)
-                    u_interp = f(retz)
+                    u_interp = f(retz.data)
 
                     f = interpolate.interp1d(
                         zxx[:, 0], vxx, axis=0, bounds_error=False, fill_value=-999)
-                    v_interp = f(retz)
+                    v_interp = f(retz.data)
 
                     f = interpolate.interp1d(
                         zxx[:, 0], u_errx, axis=0, bounds_error=False, fill_value=-999)
-                    uerr_interp = f(retz)
+                    uerr_interp = f(retz.data)
 
                     f = interpolate.interp1d(
                         zxx[:, 0], v_errx, axis=0, bounds_error=False, fill_value=-999)
-                    verr_interp = f(retz)
+                    verr_interp = f(retz.data)
 
                     # Get rid of NaN values
                     foo = np.where(np.isnan(u_interp))
@@ -980,12 +982,173 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                     v_interp = None
                     uerr_interp = None
                     verr_interp = None
+            
+        elif vip['proc_lidar_type'][k] == 3:
+            
+            if verbose >= 1:
+                print('Reading in ZPH file')
+
+            dates = [(datetime.strptime(str(date), '%Y%m%d') - timedelta(days=1)).strftime('%Y%m%d'),
+                     str(date),  (datetime.strptime(str(date), '%Y%m%d') + timedelta(days=1)).strftime('%Y%m%d')]
+            
+            files = []
+            for i in range(len(dates)):
+                files = files + \
+                    sorted(glob.glob(
+                        vip['proc_lidar_paths'][k] + '/' + 'Wind_*Y' + dates[i][0:4] + '_M' + dates[i][4:6]
+                        + '_D' + dates[i][6:8] + '.*'))
+            
+            if len(files) == 0:
+                if verbose >= 1:
+                    print('No ZPH files found in this directory for this date')
+                lsecsx = None
+                u_interp = None
+                v_interp = None
+                uerr_interp = None
+                verr_interp = None
+                
+            else:
+                for i in range(len(files)):
+                    
+                    # These files are a pain to use. They are poorly formatted .csv
+                    # with a lot of potential script breaking problems.
+                    
+                    inp = open(files[i]).readlines()[0].split(',')
+                    height_array = str.split(inp[-1])[2:]
+                    zx = np.array([int(i[:-1]) for i in height_array])[::-1]
+                    timestamp = np.loadtxt(files[i], delimiter=',', usecols=(1,),dtype=str, unpack=True,skiprows=2)
+                    
+                    to_temp = []
+                    if (timestamp[0][:-2] == 'AM') or (timestamp[0][:-2] == 'PM'):
+                        fmt = '%d/%m/%Y %H:%M:%S %p'
+                    else:
+                        fmt = '%d/%m/%Y %H:%M:%S'
+                        
+                    for j in range(len(timestamp)):
+                        try:
+                            to_temp.append((datetime.strptime(timestamp[j],fmt)
+                                           -datetime(1970,1,1)).total_seconds())
+                        except:
+                            print("Bad row in ZPH file")
+                    
+                    to_temp = np.array(to_temp)
+                    
+                    foo = np.where((to_temp >= rtime-((vip['proc_lidar_timedelta'][k]/2.)*60)) &
+                                   (to_temp < rtime+((vip['proc_lidar_timedelta'][k]/2.)*60)))[0]
+                    
+                    # There is not data we want in this file so just move on
+                    if len(foo) == 0:
+                        continue
+                    
+                    for j in range(0,len(zx)):
+                        try:
+                            if j == 0:
+                                wd = np.genfromtxt(files[i], comments = '#@!$', delimiter=',',usecols=(19 + j*3),dtype=None,skip_header=2,missing_values=('#N/A'),filling_values=(9999))
+                                ws = np.genfromtxt(files[i], comments = '#@!$', delimiter=',',usecols=(20 + j*3),dtype=None,skip_header=2,missing_values=('#N/A'),filling_values=(9999))
+                            else:
+                                wd = np.vstack((wd,np.genfromtxt(files[i], comments = '#@!$', delimiter=',',usecols=(19 + j*3),dtype=None,skip_header=2,missing_values=('#N/A'),filling_values=(9999))))
+                                ws = np.vstack((ws,np.genfromtxt(files[i], comments = '#@!$', delimiter=',',usecols=(20 + j*3),dtype=None,skip_header=2,missing_values=('#N/A'),filling_values=(9999))))
+                        
+                        except:
+                            if j == 0:
+                                wd = np.ones(len(to_temp))*np.nan
+                                ws = np.ones(len(to_temp))*np.nan
+                            else:
+                                wd = np.vstack((wd,np.ones(len(to_temp))*np.nan))
+                                ws = np.vstack((ws,np.ones(len(to_temp))*np.nan))
+                            print("Bad wind data in ZPH file")
+                        
+                    wd[wd==9999] = np.nan
+                    ws[ws==9999] = np.nan
+                    
+                    ux = np.array(np.sin(np.deg2rad(wd-180))*ws).transpose()
+                    vx = np.array(np.cos(np.deg2rad(wd-180))*ws).transpose()
+                    
+                    ux = ux[:,::-1]
+                    vx = vx[:,::-1]
+                    
+                
+                    if no_data:
+                        lsecsx = np.copy(to_temp[foo])
+                        zxx = np.copy(np.array([zx]*len(to_temp[foo])))
+                        uxx = np.copy(ux[foo,:])
+                        vxx = np.copy(vx[foo,:])
+                        no_data = False
+
+                    else:
+                        lsecsx = np.append(lsecsx, to_temp[foo])
+                        zxx = np.vstack((zxx, np.array([zx]*len(to_temp[foo]))))
+                        uxx = np.vstack((uxx, ux[foo,:]))
+                        vxx = np.vstack((vxx, vx[foo,:]))
+                
+                if not no_data:
+                    zxx = zxx.T/1000.
+                    uxx = uxx.T
+                    vxx = vxx.T
+                    
+                    # For this type of data we are going to average the scans
+                    # and the variance of the wind speed will be the variance
+                    # of the data
+                    uxx_mean = np.nanmean(uxx,axis=1)
+                    vxx_mean = np.nanmean(vxx,axis=1)
+                    
+                    u_err = np.nanstd(uxx,axis=1)
+                    v_err = np.nanstd(vxx,axis=1)
+                    
+                    # Interpolate the data to the retrieval vertical grid
+                    f = interpolate.interp1d(
+                        zxx[:, 0], uxx_mean, axis=0, bounds_error=False, fill_value=-999)
+                    u_interp = f(retz.data)
+
+                    f = interpolate.interp1d(
+                        zxx[:, 0], vxx_mean, axis=0, bounds_error=False, fill_value=-999)
+                    v_interp = f(retz.data)
+                    
+                    f = interpolate.interp1d(
+                        zxx[:, 0], u_err, axis=0, bounds_error=False, fill_value=-999)
+                    uerr_interp = f(retz.data)
+
+                    f = interpolate.interp1d(
+                        zxx[:, 0], v_err, axis=0, bounds_error=False, fill_value=-999)
+                    verr_interp = f(retz.data)
+                    
+                    # Get rid of NaN values
+                    foo = np.where(np.isnan(u_interp))
+
+                    u_interp[foo] = -999.
+                    v_interp[foo] = -999.
+                    uerr_interp[foo] = -999.
+                    verr_interp[foo] = -999.
+
+                    # We only want to use data between min range and max range so set
+                    # everything else to missing
+
+                    foo = np.where((retz < vip['proc_lidar_minalt'][k]) |
+                                   (retz > vip['proc_lidar_maxalt'][k]))
+
+                    u_interp[foo] = -999.
+                    v_interp[foo] = -999.
+                    uerr_interp[foo] = -999.
+                    verr_interp[foo] = -999.
+
+                    foo = np.where(u_interp != -999.)[0]
+                    if len(foo) > 0:
+                        available[k] = 1
+
+                else:
+                    print('No ZPH data for retrieval at this time')
+                    lsecsx = None
+                    u_interp = None
+                    v_interp = None
+                    uerr_interp = None
+                    verr_interp = None
+                
 
         lsecs.append(lsecsx)
         u.append(u_interp)
         v.append(v_interp)
-        u_error(uerr_interp)
-        v_error(verr_interp)
+        u_error.append(uerr_interp)
+        v_error.append(verr_interp)
 
     # Build the output dictionary and return it
 

@@ -47,7 +47,7 @@ def read_vip_file(filename,globatt,verbose):
             'max_iterations':10,         # Maximum number of iterations in the retrieval
             'diagonal_covariance':1,      # 0-don't force observation covariance matrix to be diagonal, 1-force it to be diagonal
             'w_mean':5.0,                # mean values for vertical velocity to use in the prior
-            'w_lengthscale':0.1,        # length scale in meters for the squared covariance function for vertical velocity
+            'w_lengthscale':0.1,        # length scale in km for the squared covariance function for vertical velocity
             
             'station_lat':-999.,         # Station latitude [degN]
             'station_lon':-999.,         # Station longitude [degE]
@@ -62,6 +62,8 @@ def read_vip_file(filename,globatt,verbose):
             'raw_lidar_minsnr':[-23],
             'raw_lidar_altitude':[0],        # Altitude of the lidar [m msl]
             'raw_lidar_timedelta':[5],        # Length of window [min] for lidar data to be include in each retrieval time (e.g. 5 means all data within 5 minutes of retrieval time will be used)
+            'raw_lidar_fix_csm_azimuths':[0],          # Fix the azimuths of the lidar scans
+            'raw_lidar_fix_heading':[0],     # Use the heading in the lidar file to add to the azimuths
             
             'proc_lidar_number':0,           # Number of lidar data sources used in the retrieval
             'proc_lidar_type':[0],           # List of lidar types. 0-None, 1-CLAMPS VAD, 2-ARM/NCAR VAD
@@ -169,6 +171,8 @@ def read_vip_file(filename,globatt,verbose):
                         (key == 'raw_lidar_minsnr') or
                         (key == 'raw_lidar_altitude') or
                         (key == 'raw_lidar_timedelta') or
+                        (key == 'raw_lidar_fix_csm_azimuths') or
+                        (key == 'raw_lidar_fix_heading') or
                         (key == 'proc_lidar_type') or
                         (key == 'proc_lidar_paths') or
                         (key == 'proc_lidar_minalt') or
@@ -226,7 +230,8 @@ def read_vip_file(filename,globatt,verbose):
                         for x in feh:
                             if (key == 'raw_lidar_paths') or (key == 'proc_lidar_paths') or (key == 'insitu_paths') or (key == 'raw_profiler_paths'):
                                 vip[key].append(x.strip())
-                            elif (key == 'raw_lidar_type') or (key == 'raw_lidar_type') or (key == 'insitu_type') or (key == 'raw_profiler_type'):
+                            elif ((key == 'raw_lidar_type') or (key == 'raw_lidar_type') or (key == 'insitu_type') or (key == 'raw_profiler_type') or
+                                 (key == 'raw_lidar_fix_csm_azimuths') or (key == 'raw_lidar_fix_heading')):
                                 vip[key].append(int(x))
                             else:
                                 vip[key].append(float(x))

@@ -6,26 +6,26 @@
 # same strings in the VIP structure. The values on the right of the = are the values
 #
 # This section is for retrieval options
-tres                     = 15      # Temporal resolution [min]
+tres                     = 10      # Temporal resolution [min]
 first_guess              = 1       # First guess for the solution. 1-Use prior, 2-Use previous retrieval
 max_iterations           = 10      # Maximum number of iterations in the retrieval
 #
 # This section is for setting the location of the retrieval
-station_lat              = 36.601     # Station latitude [degN]
-station_lon              = -97.487   # Station longitude [degE]
-station_alt              = 313        # Station altitude [m MSL]
+station_lat              = 36.1171     # Station latitude [degN]
+station_lon              = -97.4378   # Station longitude [degE]
+station_alt              = 338        # Station altitude [m MSL]
 #
 #
 # This section controls the use of raw lidar data in the retrieval
 raw_lidar_number         = 1      # Number of lidar data sources used in the retrieval
-raw_lidar_type           = 4    # List of lidar types. 0-None, 1-CLAMPS Halo, 2-Windcube non-das
-raw_lidar_paths          = /Users/joshua.gebauer/mnt/joshua.gebauer/ARM_data/lidar/  # List of paths #for the lidar data
+raw_lidar_type           = 3    # List of lidar types. 0-None, 1-CLAMPS Halo, 2-Windcube non-das
+raw_lidar_paths          = /Users/joshua.gebauer/mnt/clamps/clamps/clamps2/ingested/clampsdlppiC2.b1  # List of paths #for the lidar data
 raw_lidar_minrng         = 0.0      # Minimum range [km] to use lidar data. Length of list should be #raw_lidar_number
-raw_lidar_maxrng         = 4       # Maximum range [km] to use lidar data. Length of list should be #raw_lidar_number
+raw_lidar_maxrng         = 5       # Maximum range [km] to use lidar data. Length of list should be #raw_lidar_number
 raw_lidar_maxsnr         = -5             # Maximum snr [dB] to use lidar data. Length of list should be raw_lidar_number
-raw_lidar_minsnr         = -23            # Maximum snr [dB] to use lidar data. Length of list should be raw_lidar_number
-raw_lidar_altitude       = 317    # Altitude of the lidar [m msl]
-raw_lidar_timedelta      = 15        # Length of window [min] for lidar data to be included in each retrieval time
+raw_lidar_minsnr         = -24            # Maximum snr [dB] to use lidar data. Length of list should be raw_lidar_number
+raw_lidar_altitude       = 338    # Altitude of the lidar [m msl]
+raw_lidar_timedelta      = 10        # Length of window [min] for lidar data to be included in each retrieval time
 #
 # This section controls the use of processed lidar data in the retrieval
 #proc_lidar_number        = 0       # Number of lidar data sources used in the retrieval
@@ -45,40 +45,40 @@ raw_lidar_timedelta      = 15        # Length of window [min] for lidar data to 
 #cons_profiler_timedelta  = 5       # Length of wind [min] for wind profiler data to be included in each retrieval time
 #
 # This section controls the use of raw wind profiler data in the retrieval
-raw_profiler_number        = 2
-raw_profiler_type         = 1,1
-raw_profiler_paths         = /Users/joshua.gebauer/mnt/joshua.gebauer/ARM_data/wind_profiler/low, /Users/joshua.gebauer/mnt/joshua.gebauer/ARM_data/wind_profiler/high
-raw_profiler_minalt       = 0,0
-raw_profiler_maxalt       = 7,7
-raw_profiler_altitude     = 317,317
-raw_profiler_timedelta    = 60,60
-consensus_cutoff          = 3,3
-consensus_min_pct         = 50,50
+#raw_profiler_number        = 2
+#raw_profiler_type         = 1,1
+#raw_profiler_paths         = /Users/joshua.gebauer/mnt/joshua.gebauer/ARM_data/wind_profiler/low, /Users/joshua.gebauer/mnt/joshua.gebauer/ARM_data/wind_profiler/high
+#raw_profiler_minalt       = 0,0
+#raw_profiler_maxalt       = 7,7
+#raw_profiler_altitude     = 317,317
+#raw_profiler_timedelta    = 60,60
+#consensus_cutoff          = 3,3
+#consensus_min_pct         = 50,50
 #
 # This section controls the use of insitu wind data in the retrieval
-insitu_number            = 1       # Number of insitu data sources used in the retrieval
-insitu_type              = 2       # List of insitu types. 0-None, 1-NCAR Tower, 2-ARM Met Station
-insitu_paths             = /Users/joshua.gebauer/mnt/joshua.gebauer/ARM_data/tower/           # List of paths for the insitu data
-insitu_minalt            = 0       # Minimum altitude [km] to use the insitu data
-insitu_maxalt            = 2       # Maximum altitude [km] to use the insitu data
-insitu_timedelta         = 15       # Length of window [min] for insitu data to be included in each retrieval time
+#insitu_number            = 1       # Number of insitu data sources used in the retrieval
+#insitu_type              = 2       # List of insitu types. 0-None, 1-NCAR Tower, 2-ARM Met Station
+#insitu_paths             = /Users/joshua.gebauer/mnt/joshua.gebauer/ARM_data/tower/           # List of paths for the insitu data
+#insitu_minalt            = 0       # Minimum altitude [km] to use the insitu data
+#insitu_maxalt            = 2       # Maximum altitude [km] to use the insitu data
+#insitu_timedelta         = 15       # Length of window [min] for insitu data to be included in each retrieval time
 #
 #This section controls the use of model data in the retrieval
-use_model                  = 1       # 0-No model constraint, 1-use a model constraint
-model_path                 = /Users/joshua.gebauer/RAP_Soundings/
-model_timedelta            = 30      # Length of window [min] for ensemble data to be included in retrieval
-model_err_inflation        = 3       # Model error inflation
+#use_model                  = 1       # 0-No model constraint, 1-use a model constraint
+#model_path                 = /Users/joshua.gebauer/RAP_Soundings/
+#model_timedelta            = 30      # Length of window [min] for ensemble data to be included in retrieval
+#model_err_inflation        = 3       # Model error inflation
 
 # This section controls the output of the retrieval
 output_rootname          = WINDoe    # String with rootname of the output file
-output_path              = /Users/joshua.gebauer/WINDoe_runs/Everything/    # Path where the output file will be placed
+output_path              = /Users/joshua.gebauer/WINDoe_runs/AWAKEN/E36/    # Path where the output file will be placed
 output_clobber           = 2       # 0-do not clobber preexisting output file, 1-clobber them, 2-append to the last file of this day
 #
 # Global attributes for the output netCDF file (must start with "globatt_")
 #
-globatt_Site = ARM SGP Site, Lamont, OK
-globatt_Instruments = ARM Lidar
+globatt_Site = ARM E36 Site
+globatt_Instruments = CLAMPS Lidar
 globatt_Dataset_contact = Josh Gebauer, OU/NSSL, joshua.gebauer@noaa.gov
-globatt_Processing_comment = Data were processed in using radiosonde prior information
+globatt_Processing_comment = Data were processed using radiosonde prior information
 
 

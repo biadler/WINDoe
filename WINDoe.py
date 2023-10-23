@@ -364,7 +364,7 @@ for i in range(len(rtime)):
                 sigY.extend(proc_lidar['u_error'][j][foo].ravel())
                 Sy.extend(proc_lidar['u_error'][j][foo].ravel()**2)
                 flagY.extend(np.ones(len(proc_lidar['u'][j][foo].ravel()))*2)
-                dimY.extend(proc_lidar['height'][j][foo[0]])
+                dimY.extend(proc_lidar['height'][foo[0]])
                 azY.extend(np.ones(len(proc_lidar['u'][j][foo])).ravel()*-999)
                 elY.extend(np.ones(len(proc_lidar['u'][j][foo])).ravel()*-999)
                 
@@ -383,7 +383,7 @@ for i in range(len(rtime)):
                 sigY.extend(proc_lidar['v_error'][j][foo].ravel())
                 Sy.extend(proc_lidar['v_error'][j][foo].ravel()**2)
                 flagY.extend(np.ones(len(proc_lidar['v'][j][foo].ravel()))*3)
-                dimY.extend(proc_lidar['height'][j][foo[0]])
+                dimY.extend(proc_lidar['height'][foo[0]])
                 azY.extend(np.ones(len(proc_lidar['v'][j][foo])).ravel()*-999)
                 elY.extend(np.ones(len(proc_lidar['v'][j][foo])).ravel()*-999)
     
