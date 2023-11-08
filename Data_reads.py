@@ -1221,19 +1221,19 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                     # We need to make sure the wd is right by comparing the first level wd
                     # to the surface wd if the difference is greater than 90 then correct it
                     
-                    wd_dif = (np.rad2deg(np.arctan2(np.cos(np.deg2rad(wd[-1])),np.sin(np.deg2rad(wd[-1])))) -
-                             np.rad2deg(np.arctan2(np.cos(np.deg2rad(sfc_wd)),np.sin(np.deg2rad(sfc_wd)))))
+                    #wd_dif = (np.rad2deg(np.arctan2(np.cos(np.deg2rad(wd[-1])),np.sin(np.deg2rad(wd[-1])))) -
+                    #         np.rad2deg(np.arctan2(np.cos(np.deg2rad(sfc_wd)),np.sin(np.deg2rad(sfc_wd)))))
                     
-                    fah = np.where((np.abs(wd_dif) >90))[0]
+                    #fah = np.where((np.abs(wd_dif) >90))[0]
                     
-                    wd[:,fah] = wd[:,fah] + 180
+                    #wd[:,fah] = wd[:,fah] + 180
                     
-                    fah = np.where(wd > 360)
-                    wd[fah] = wd[fah]-360
+                    #fah = np.where(wd > 360)
+                    #wd[fah] = wd[fah]-360
                     
-                    fah = np.where(np.isnan(sfc_wd))[0]
+                    #fah = np.where(np.isnan(sfc_wd))[0]
                     
-                    wd[:,fah] = np.nan
+                    #wd[:,fah] = np.nan
                     
                     ux = np.array(np.sin(np.deg2rad(wd-180))*ws).transpose()
                     vx = np.array(np.cos(np.deg2rad(wd-180))*ws).transpose()
