@@ -288,7 +288,7 @@ def check_vip(vip):
         print('Error: The output_clobber flag can only be set to 0, 1, or 2')
         flag = 1
     
-    foo = np.where((np.array(vip['raw_lidar_type']) < 0) | (np.array(vip['raw_lidar_type']) > 4))[0]
+    foo = np.where((np.array(vip['raw_lidar_type']) < 0) | (np.array(vip['raw_lidar_type']) > 5))[0]
     if len(foo) > 0:
         print('Error: lidar_type can only be set to 0, 1, 2, 3, or 4')
         flag = 1

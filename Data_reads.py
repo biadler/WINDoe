@@ -165,7 +165,7 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                         azxx = np.vstack((azxx, az_scan))
                         elxx = np.vstack((elxx, el_scan))
                         vrxx = np.vstack((vrxx, vr_scan))
-                        snrxx = np.append((snrxx, snr_scan))
+                        snrxx = np.vstack((snrxx, snr_scan))
 
                 if not no_data:
 
@@ -467,7 +467,6 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                         no_data = False
 
                     else:
-                        lsecsx = np.append(lsecsx, bt+to[foo[fah]])
 
                         # Check to make sure the range array is the same length
                         # and azimuth and elevation are the same. If not
@@ -477,7 +476,8 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                             print('Error: Raw lidar data source ' + str(k+1) +
                                   ' changed during period retrieval period')
                             continue
-
+                        
+                        lsecsx = np.append(lsecsx, bt+to[foo[fah]])
                         rngxx = np.append(rngxx, np.array(
                             [rngx]*len(to[foo[fah]])), axis=0)
                         azxx = np.append(azxx, azx)
@@ -687,6 +687,160 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                     rngxx = rngxx[0]
                 else:
                     print('No raw ARM lidar data for retrieval at this time')
+                    lsecsx = None
+                    rngxx = None
+                    azxx = None
+                    elxx = None
+                    vrxx = None
+                    vr_varxx = None
+    
+        if vip['raw_lidar_type'][k] == 5:
+            if verbose >= 1:
+                print('Reading in unprocessed ARM CSM Halo lidar file')
+
+            dates = [(datetime.strptime(str(date), '%Y%m%d') - timedelta(days=1)).strftime('%Y%m%d'),
+                     str(date),  (datetime.strptime(str(date), '%Y%m%d') + timedelta(days=1)).strftime('%Y%m%d')]
+
+            files = []
+            for i in range(len(dates)):
+                for j in range(len(cdf)):
+                    files = files + \
+                        sorted(
+                            glob.glob(vip['raw_lidar_paths'][k] + '/' + '*' + dates[i] + '*.' + cdf[j]))
+
+            if len(files) == 0:
+                if verbose >= 1:
+                    print(
+                        'No ARM Halo lidar files found in this directory for this date')
+                lsecsx = None
+                rngxx = None
+                azxx = None
+                elxx = None
+                vrxx = None
+                vr_varxx = None
+            else:
+                for i in range(len(files)):
+                    fid = Dataset(files[i], 'r')
+                    bt = fid.variables['base_time'][0]
+                    to = fid.variables['time_offset'][:]
+
+                    foo = np.where((bt+to >= rtime-((vip['raw_lidar_timedelta'][k]/2.)*60)) &
+                                   (bt+to < rtime+((vip['raw_lidar_timedelta'][k]/2.)*60)))[0]
+
+                    # There are no times we want here so just move on
+                    if len(foo) == 0:
+                        fid.close()
+                        continue
+
+                    rngx = fid.variables['range'][:]/1000.
+                    
+                    if vip['raw_lidar_fix_heading'] == 1:
+                        azx = (fid.variables['azimuth'][:] +
+                               fid.variables['heading'][:]) % 360
+                    else:
+                        azx = fid.variables['azimuth'][:]
+                        
+                    elx = fid.variables['elevation'][:]
+                    vrx = fid.variables['radial_velocity'][:, :]
+                    snrx = 10*np.log10(fid.variables['intensity'][:, :] - 1)
+
+                    fid.close()
+                    
+                    # Need to make sure this is usable data
+                    fah = np.where(azx[foo] >= -500)[0]
+                    if len(fah) == 0:
+                        continue
+                    
+                    # Need to fix the azimuths in csm files
+                    if vip['raw_lidar_fix_csm_azimuths'] == 1:
+                        azx = azx[foo[fah]]
+                        azimuth_follow = np.concatenate((azx[1:], [azx[-1]]))
+                        for j in range(len(azx)):
+                            azx[j] = Other_functions.mean_azimuth(
+                                azx[j], azimuth_follow[j], .6)
+                    else:
+                        azx = azx[foo[fah]]
+
+                    if no_data:
+                        lsecsx = bt+to[foo[fah]]
+                        rngxx = np.array([rngx]*len(to[foo[fah]]))
+                        azxx = np.copy(azx)
+                        elxx = elx[foo[fah]]
+                        vrxx = vrx[foo[fah], :]
+                        snrxx = snrx[foo[fah], :]
+                        no_data = False
+
+                    else:
+
+                        # Check to make sure the range array is the same length
+                        # and azimuth and elevation are the same. If not
+                        # abort and tell user
+
+                        if (len(rngx) != len(rngxx[0])):
+                            print('Error: Raw lidar data source ' + str(k+1) +
+                                  ' changed during period retrieval period')
+                            continue
+                        
+                        lsecsx = np.append(lsecsx, bt+to[foo[fah]])
+                        rngxx = np.append(rngxx, np.array(
+                            [rngx]*len(to[foo[fah]])), axis=0)
+                        azxx = np.append(azxx, azx)
+                        elxx = np.append(elxx, elx[foo[fah]])
+                        vrxx = np.append(vrxx, vrx[foo[fah]], axis=0)
+                        snrxx = np.append(snrxx, snrx[foo[fah]], axis=0)
+
+                if not no_data:
+
+                    # Set the vr variance to a constant value
+
+                    rngxx = rngxx[0]
+
+                    # We only want to use data that falls in our snr bounds
+
+                    foo = np.where((snrxx < vip['raw_lidar_minsnr'][k]) |
+                                   (snrxx > vip['raw_lidar_maxsnr'][k]))
+
+                    vrxx[foo] = np.nan
+                    snrxx[foo] = np.nan
+
+                    # We only want to use data between min range and max range so set
+                    # everything else to missing
+
+                    foo = np.where((rngxx < vip['raw_lidar_minrng'][k]) |
+                                   (rngxx > vip['raw_lidar_maxrng'][k]))[0]
+
+                    vrxx[:, foo] = np.nan
+
+                    # Now interpolate to the heights of the retrieval
+                    vrzz = np.ones((len(elxx), len(retz)))*-999
+                    vr_varzz = np.ones((len(elxx), len(retz)))*-999
+
+                    for ii in range(len(elxx)):
+                        hgt = rngxx*np.sin(np.deg2rad(elxx[ii]))
+                        vrzz[ii, :] = np.interp(
+                            retz, hgt, vrxx[ii, :], left=-999, right=-999)
+
+                    temp_sig = Other_functions.wind_estimate(
+                        vrzz, elxx, azxx, retz)
+                    vr_varzz[:, :] = temp_sig[None, :]
+
+                    vrxx = np.copy(vrzz)
+                    vr_varxx = np.copy(vr_varzz)
+
+                    vrxx[np.isnan(vrxx)] = -999
+                    vr_varxx[np.isnan(vr_varxx)] = -999
+
+                    vrxx = vrxx.T
+                    vr_varxx = vr_varxx.T
+
+                    foo = np.where((vrxx != -999) & (vr_varxx < 3000))[0]
+                    if len(foo) > 0:
+                        available[k] = 1
+                    else:
+                        print('No valid ARM lidar data found')
+
+                else:
+                    print('No raw ARM CSM data for retrieval at this time')
                     lsecsx = None
                     rngxx = None
                     azxx = None
@@ -1040,6 +1194,9 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                     if len(foo) == 0:
                         continue
                     
+                    sfc_wd = np.genfromtxt(files[i], comments = '#@!$', delimiter=',',usecols=(17),dtype=None,skip_header=2,missing_values=('#N/A'),filling_values=(9999))
+                    sfc_wd[sfc_wd==9999] = np.nan
+                    
                     for j in range(0,len(zx)):
                         try:
                             if j == 0:
@@ -1061,13 +1218,29 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                     wd[wd==9999] = np.nan
                     ws[ws==9999] = np.nan
                     
+                    # We need to make sure the wd is right by comparing the first level wd
+                    # to the surface wd if the difference is greater than 90 then correct it
+                    
+                    wd_dif = (np.rad2deg(np.arctan2(np.cos(np.deg2rad(wd[-1])),np.sin(np.deg2rad(wd[-1])))) -
+                             np.rad2deg(np.arctan2(np.cos(np.deg2rad(sfc_wd)),np.sin(np.deg2rad(sfc_wd)))))
+                    
+                    fah = np.where((np.abs(wd_dif) >90))[0]
+                    
+                    wd[:,fah] = wd[:,fah] + 180
+                    
+                    fah = np.where(wd > 360)
+                    wd[fah] = wd[fah]-360
+                    
+                    fah = np.where(np.isnan(sfc_wd))[0]
+                    
+                    wd[:,fah] = np.nan
+                    
                     ux = np.array(np.sin(np.deg2rad(wd-180))*ws).transpose()
                     vx = np.array(np.cos(np.deg2rad(wd-180))*ws).transpose()
                     
                     ux = ux[:,::-1]
                     vx = vx[:,::-1]
                     
-                
                     if no_data:
                         lsecsx = np.copy(to_temp[foo])
                         zxx = np.copy(np.array([zx]*len(to_temp[foo])))
