@@ -25,7 +25,7 @@ Note: Most of these packages are standard in python distributions
 It is planned that WINDoe will be put into a Docker container, but until then WINDoe can be run like so
 
 ```
-python WINDoe.py /Path/to/vip/file /Path/to/prior/file/ [--shour <start hour>] [--ehour <end hour>] [--verbose <0,1,2,3>]
+python WINDoe.py date /Path/to/vip/file /Path/to/prior/file/ [--shour <start hour>] [--ehour <end hour>] [--verbose <0,1,2,3>]
 ```
 
 Monthly priors calculated from the radiosonde data at the ARM-SGP are included in the repository.  
