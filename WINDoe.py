@@ -1134,8 +1134,8 @@ for i in range(len(rtime)):
         # am mixing units from all of the different types of observation
         # But I will also compute the chi-square value of the obs vs. F(Xn)
         
-        chi2 = np.sqrt(np.sum(((Y - FXn)/ Y)**2) / np.float(nY))
-        rmsa = np.sqrt(np.sum(((Y - FXn)/sigY)**2) / np.float(nY))
+        chi2 = np.sqrt(np.sum(((Y - FXn)/ Y)**2) / nY)
+        rmsa = np.sqrt(np.sum(((Y - FXn)/sigY)**2) / nY)
         #rmsp = np.mean( (Xa - Xnp1[:,0])/sig_Xa)
         rmsp = np.mean( (Xa - Xnp1[:])/sig_Xa)
         
