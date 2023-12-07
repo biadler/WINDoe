@@ -2117,7 +2117,6 @@ def read_insitu(date, retz, rtime, vip, verbose):
 
                             foo = np.where(u_interp != -999.)[0]
 
-                            print(u_interp.shape, uerr_interp.shape)
                             if len(foo) > 0:
                                 available[k] = 1
                             else:
@@ -2130,6 +2129,106 @@ def read_insitu(date, retz, rtime, vip, verbose):
                     uerr_interp = None
                     verr_interp = None
                     z_interp = None
+            
+        if vip['insitu_type'][k] == 5:
+            if verbose >= 1:
+                print('Reading in mobile mesonet data')
+
+            dates = [(datetime.strptime(str(date), '%Y%m%d') - timedelta(days=1)).strftime('%Y%m%d'),
+                     str(date),  (datetime.strptime(str(date), '%Y%m%d') + timedelta(days=1)).strftime('%Y%m%d')]
+
+            files = []
+            for i in range(len(dates)):
+                files = files + \
+                    sorted(glob.glob(vip['insitu_paths'][k] +
+                           '/' + '*' + dates[i] + '_MM.nc'))
+
+            if len(files) == 0:
+                if verbose >= 1:
+                    print('No mobile mesonet data found for this time')
+                u_interp = None
+                v_interp = None
+                uerr_interp = None
+                verr_interp = None
+                z_interp = None
+            else:
+                for i in range(len(files)):
+                    fid = Dataset(files[i], 'r')
+                    t = f.variables['epochtime'][:]
+
+                    # We want the profile closest to the analysis time that fall into the window
+                    foo = np.nanargmin(np.abs((t) - rtime))
+
+                    foo = np.where((t >= rtime-((vip['insitu_timedelta'][k]/2.)*60)) &
+                                   (t < rtime+((vip['insitu_timedelta'][k]/2.)*60)))[0]
+
+                    # There are no times we want here so just move on
+                    if len(foo) == 0:
+                        continue
+
+                    sx = fid.variables['sfc_wspd'][foo]
+                    wdx = fid.variables['sfc_wdir'][foo]
+                    qcx = fid.variables['qc4'][foo]
+
+                    fid.close()
+
+                    ux = -sx*np.sin(np.deg2rad(wdx))
+                    vx = -sx*np.cos(np.deg2rad(wdx))
+
+                    if no_data:
+                        uxx = np.copy(ux)
+                        vxx = np.copy(vx)
+                        qcxx = np.copy(qcx)
+                        no_data = False
+
+                    else:
+                        uxx = np.append(uxx, ux)
+                        vxx = np.append(vxx, vx)
+                        qcxx = np.append(qcxx,qcx)
+
+                if not no_data:
+                    foo = np.where(np.abs(uxx) < -100.)
+                    uxx[foo] = np.nan
+                    vxx[foo] = np.nan
+                    
+                    foo = np.where(qcx==1)
+                    uxx[foo] = np.nan
+                    vxx[foo] = np.nan
+
+                    foo = np.where(~np.isnan(uxx))[0]
+                    if len(foo) < 1:
+                        u_interp = None
+                        v_interp = None
+                        uerr_interp = None
+                        verr_interp = None
+                        z_interp = None
+                        continue
+
+                    # Now average the data and get the variance
+                    u_interp = np.nanmean(uxx)
+                    v_interp = np.nanmean(vxx)
+                    
+                    uerr_interp = np.nanstd(uxx)
+                    verr_interp = np.nanstd(vxx)
+
+                    # This is all 10-m data
+                    z_interp = np.array([0.01])
+
+                    u_interp = np.array([u_interp])
+                    v_interp = np.array([v_interp])
+                    uerr_interp = np.array([uerr_interp])
+                    verr_interp = np.array([verr_interp])
+
+                    if u_interp[0] > -100:
+                        available[k] = 1
+
+                else:
+                    print('No mobile mesonet data for retrieval at this time')
+                    u_interp = None
+                    v_interp = None
+                    uerr_interp = None
+                    verr_interp = None
+                    z_interp = None  
                     
         u.append(u_interp)
         v.append(v_interp)

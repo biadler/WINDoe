@@ -1069,6 +1069,7 @@ for i in range(len(rtime)):
         
         # Set an error floor of 1 for all observations except Copter data to 
         # prevent overfitting
+        # TODO: Make noise floor part of namelist
         Sy = np.array(Sy)
         foo = np.where((flagY <= 12) & (Sy<1))
         Sy[foo] = 1
