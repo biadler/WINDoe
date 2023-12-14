@@ -2154,7 +2154,7 @@ def read_insitu(date, retz, rtime, vip, verbose):
             else:
                 for i in range(len(files)):
                     fid = Dataset(files[i], 'r')
-                    t = f.variables['epochtime'][:]
+                    t = fid.variables['epochtime'][:]
 
                     # We want the profile closest to the analysis time that fall into the window
                     foo = np.nanargmin(np.abs((t) - rtime))
