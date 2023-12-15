@@ -433,6 +433,7 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                     if vip['raw_lidar_fix_heading'][k] == 1:
                         azx = (fid.variables['azimuth'][:] +
                                fid.variables['heading'][:]) % 360
+                        hd = fid.variables['heading'][:]
                     else:
                         azx = fid.variables['azimuth'][:]
                         
@@ -444,7 +445,7 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                     
                     # Need to make sure this is usable data
                     if vip['raw_lidar_fix_heading'][k] == 1:
-                        fah = np.where(((azx[foo] >= -500) & (fid.variables['heading'][foo] >= -500)))
+                        fah = np.where(((azx[foo] >= -500) & (hd[foo] >= -500)))
                     else:
                         fah = np.where(azx[foo] >= -500)[0]
                         
@@ -741,6 +742,7 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                     if vip['raw_lidar_fix_heading'][k] == 1:
                         azx = (fid.variables['azimuth'][:] +
                                fid.variables['heading'][:]) % 360
+                        hd = fid.variables['heading'][:]
                     else:
                         azx = fid.variables['azimuth'][:]
                         
@@ -752,7 +754,7 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                     
                     # Need to make sure this is usable data
                     if vip['raw_lidar_fix_heading'][k] == 1:
-                        fah = np.where(((azx[foo] >= -500) & (fid.variables['heading'][foo] >= -500)))
+                        fah = np.where(((azx[foo] >= -500) & (hd[foo] >= -500)))
                     else:
                         fah = np.where(azx[foo] >= -500)[0]
                         
