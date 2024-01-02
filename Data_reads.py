@@ -430,9 +430,10 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
 
                     rngx = fid.variables['range'][:]
                     
-                    if vip['raw_lidar_fix_heading'] == 1:
+                    if vip['raw_lidar_fix_heading'][k] == 1:
                         azx = (fid.variables['azimuth'][:] +
                                fid.variables['heading'][:]) % 360
+                        hd = fid.variables['heading'][:]
                     else:
                         azx = fid.variables['azimuth'][:]
                         
@@ -443,12 +444,16 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                     fid.close()
                     
                     # Need to make sure this is usable data
-                    fah = np.where(azx[foo] >= -500)[0]
+                    if vip['raw_lidar_fix_heading'][k] == 1:
+                        fah = np.where(((azx[foo] >= -500) & (hd[foo] >= -500)))
+                    else:
+                        fah = np.where(azx[foo] >= -500)[0]
+                        
                     if len(fah) == 0:
                         continue
                     
                     # Need to fix the azimuths in csm files
-                    if vip['raw_lidar_fix_csm_azimuths'] == 1:
+                    if vip['raw_lidar_fix_csm_azimuths'][k] == 1:
                         azx = azx[foo[fah]]
                         azimuth_follow = np.concatenate((azx[1:], [azx[-1]]))
                         for j in range(len(azx)):
@@ -734,9 +739,10 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
 
                     rngx = fid.variables['range'][:]/1000.
                     
-                    if vip['raw_lidar_fix_heading'] == 1:
+                    if vip['raw_lidar_fix_heading'][k] == 1:
                         azx = (fid.variables['azimuth'][:] +
                                fid.variables['heading'][:]) % 360
+                        hd = fid.variables['heading'][:]
                     else:
                         azx = fid.variables['azimuth'][:]
                         
@@ -747,12 +753,16 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                     fid.close()
                     
                     # Need to make sure this is usable data
-                    fah = np.where(azx[foo] >= -500)[0]
+                    if vip['raw_lidar_fix_heading'][k] == 1:
+                        fah = np.where(((azx[foo] >= -500) & (hd[foo] >= -500)))
+                    else:
+                        fah = np.where(azx[foo] >= -500)[0]
+                        
                     if len(fah) == 0:
                         continue
                     
                     # Need to fix the azimuths in csm files
-                    if vip['raw_lidar_fix_csm_azimuths'] == 1:
+                    if vip['raw_lidar_fix_csm_azimuths'][k] == 1:
                         azx = azx[foo[fah]]
                         azimuth_follow = np.concatenate((azx[1:], [azx[-1]]))
                         for j in range(len(azx)):
@@ -2154,7 +2164,7 @@ def read_insitu(date, retz, rtime, vip, verbose):
             else:
                 for i in range(len(files)):
                     fid = Dataset(files[i], 'r')
-                    t = f.variables['epochtime'][:]
+                    t = fid.variables['epochtime'][:]
 
                     # We want the profile closest to the analysis time that fall into the window
                     foo = np.nanargmin(np.abs((t) - rtime))
