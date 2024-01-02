@@ -110,7 +110,7 @@ def wind_estimate(vr,el,az,ranges,default_sigma=100000,missing=-999):
         A = np.ones((len(foo),3))
         A[:,0] = np.sin(np.deg2rad(az[foo]))*np.cos(np.deg2rad(el[foo]))
         A[:,1] = np.cos(np.deg2rad(az[foo]))*np.cos(np.deg2rad(el[foo]))
-        A[:,2] = np.sin(np.deg2rad(az[foo]))
+        A[:,2] = np.sin(np.deg2rad(el[foo]))
         
         
         # Solve for the wind components
