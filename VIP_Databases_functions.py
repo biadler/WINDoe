@@ -46,8 +46,8 @@ def read_vip_file(filename,globatt,verbose):
             'first_guess':1,             # First guess for the solution. 1-Use prior, 2-Use previous retrieval
             'max_iterations':10,         # Maximum number of iterations in the retrieval
             'diagonal_covariance':1,      # 0-don't force observation covariance matrix to be diagonal, 1-force it to be diagonal
-            'w_mean':5.0,                # mean values for vertical velocity to use in the prior
-            'w_lengthscale':0.1,        # length scale in km for the squared covariance function for vertical velocity
+            'w_mean':2.0,                # mean values for vertical velocity to use in the prior
+            'w_lengthscale':1.0,        # length scale in km for the squared covariance function for vertical velocity
             
             'station_lat':-999.,         # Station latitude [degN]
             'station_lon':-999.,         # Station longitude [degE]

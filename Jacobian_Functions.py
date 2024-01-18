@@ -83,7 +83,7 @@ def compute_jacobian_uv(Xn,z,height,uv):
         Kij = np.zeros((len(FXn),len(Xn)))
     
         for i in range(k):
-            foo = np.where(z[i] == height)[0]
+            foo = np.where(np.abs(z[i] - height) < 0.00001)[0]
             if len(foo) > 0:
                 Kij[foo,i] = 1
     
@@ -95,7 +95,7 @@ def compute_jacobian_uv(Xn,z,height,uv):
     
     
         for i in range(k):
-            foo = np.where(z[i] == height)[0]
+            foo = np.where(np.abs(z[i] - height) < 0.00001)[0]
             if len(foo) > 0:
                 Kij[foo,k+i] = 1
     

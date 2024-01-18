@@ -117,7 +117,17 @@ def wind_estimate(vr,el,az,ranges,default_sigma=100000,missing=-999):
         v0 = (np.linalg.pinv(A.T.dot(A))).dot(A.T).dot(vr[foo,i])
         
         sigma[i] = np.sqrt(np.nansum((vr[foo,i] - A.dot(v0))**2)/(len(foo)-3))
-    
+        
+        # We are going to try this QC. If there is a significant w component
+        # determine the uncertainty with no w component
+        
+        if np.abs(v0[2]) >= 3:
+            vh_0 = (np.linalg.pinv(A[:,:-1].T.dot(A[:,:-1]))).dot(A[:,:-1].T).dot(vr[foo,i])
+            
+            temp_sigma = np.sqrt(np.nansum((vr[foo,i] - A[:,:-1].dot(vh_0))**2)/(len(foo)-2))
+            
+            if temp_sigma > sigma[i]:
+                sigma[i] = np.copy(temp_sigma)
     return sigma
 
 def consensus_average(x, width, cutoff, min_percentage,missing=-999.):

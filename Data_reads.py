@@ -2201,9 +2201,9 @@ def read_insitu(date, retz, rtime, vip, verbose):
                     uxx[foo] = np.nan
                     vxx[foo] = np.nan
                     
-                    foo = np.where(qcx==1)
-                    uxx[foo] = np.nan
-                    vxx[foo] = np.nan
+                    # foo = np.where(qcxx==1)
+                    # uxx[foo] = np.nan
+                    # vxx[foo] = np.nan
 
                     foo = np.where(~np.isnan(uxx))[0]
                     if len(foo) < 1:
