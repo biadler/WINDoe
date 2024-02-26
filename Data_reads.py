@@ -445,7 +445,7 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                     
                     # Need to make sure this is usable data
                     if vip['raw_lidar_fix_heading'][k] == 1:
-                        fah = np.where(((azx[foo] >= -500) & (hd[foo] >= -500)))
+                        fah = np.where(((azx[foo] >= -500) & (hd[foo] >= -500)))[0]
                     else:
                         fah = np.where(azx[foo] >= -500)[0]
                         
