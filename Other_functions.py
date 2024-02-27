@@ -160,7 +160,7 @@ def mean_azimuth(a, b, weight_a=0.6):
           Returns:
             w_mean: weighted mean.
           """
-
+        
         if abs(a - b) > 180:
             if a < b:
                 return ((a + 360) * weight_a + b * (1 - weight_a)) % 360

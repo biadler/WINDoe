@@ -48,6 +48,7 @@ def read_vip_file(filename,globatt,verbose):
             'diagonal_covariance':1,      # 0-don't force observation covariance matrix to be diagonal, 1-force it to be diagonal
             'w_mean':2.0,                # mean values for vertical velocity to use in the prior
             'w_lengthscale':1.0,        # length scale in km for the squared covariance function for vertical velocity
+            'run_fast':1,               # If 1 the retrieval will not iterate if only linear forward models are used
             
             'station_lat':-999.,         # Station latitude [degN]
             'station_lon':-999.,         # Station longitude [degE]

@@ -9,6 +9,7 @@ from scipy import interpolate
 
 def compute_jacobian_vr(Xn, z, Y, zY, az,el,itern,do_kij=True):
     
+    
     flag = 0         # Failure
     
     k = len(z)
@@ -61,6 +62,8 @@ def compute_jacobian_vr(Xn, z, Y, zY, az,el,itern,do_kij=True):
         
     FXn[np.isnan(FXn)] = -999.
     flag = 1
+    
+    
     if do_kij:
         return flag, Kij, FXn
     else:

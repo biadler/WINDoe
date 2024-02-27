@@ -251,6 +251,9 @@ for i in range(len(rtime)):
     # Read in the data
     fail, raw_lidar, proc_lidar, prof_cons, prof_raw, insitu, model, copter, windoe = Data_reads.read_all_data(date, z, rtime[i], vip, verbose)
     
+    # Set iterate once to false here
+    iterate_once = False
+    
     if fail == 0:
         print('There was no data selected to be used as input. Aborting.')
         VIP_Databases_functions.abort(date)
@@ -1058,13 +1061,15 @@ for i in range(len(rtime)):
         ########
         # Done computing forward calculations and Jacobians. Now the retrieval math.
         ########
-        
         # First we need to calculate the forward model error for the copters
         foo = np.where((flagY == 13) | (flagY == 14))[0]
         if ((len(foo) > 0)):
             Sb = np.diag(np.array([vip['copter_constants_unc'][0]**2, vip['copter_constants_unc'][1]**2, vip['copter_fit_unc']**2]))
             Sff = Kb.dot(Sb).dot(Kb.T)
-            Sf[foo[0]:foo[-1]+1,foo[0]:foo[-1]+1] = Sff         
+            Sf[foo[0]:foo[-1]+1,foo[0]:foo[-1]+1] = Sff
+        else:
+            if vip['run_fast'] == 1:
+                iterate_once = True
         
         
         # Set an error floor of 1 for all observations except Copter data to 
@@ -1077,11 +1082,14 @@ for i in range(len(rtime)):
         
         # We need to check if the user wants Sm to be diagonal only. If so it
         # changes how we do the matrix math
-        Sm = np.diag(Sy) + Sf
+        if vip['diagonal_covariance'] == 1:
+            Sm = Sy + np.diag(Sf)
+        else:
+            Sm = np.diag(Sy) + Sf
+            
         gfac = gfactor[itern]
         
         if vip['diagonal_covariance'] == 1:
-            Sm = np.diag(Sm)
             SmInv = 1./Sm
             B = (gfac * SaInv) + (Kij.T*SmInv[None,:]).dot(Kij)
             Binv = scipy.linalg.pinv(B)
@@ -1100,7 +1108,6 @@ for i in range(len(rtime)):
             SopInv = scipy.linalg.inv(Sop)
             Akern = Binv.dot(Kij.T).dot(SmInv).dot(Kij)
         
-    
         # Look for NaN values in the updated state vector. They should not exist,
         # but if they do, then let's stop the code
         foo = np.where(np.isnan(Xnp1))[0]
@@ -1173,6 +1180,17 @@ for i in range(len(rtime)):
                 if di2n < cvgmult * nX:                 # Converged in "classical sense"
                     converged = 1
                 
+        elif iterate_once:
+            
+            converged = 4
+            
+            Xn = np.copy(Xnp1[:,0])
+            FXn = np.ones(len(Y))*np.nan
+            rmsa = -999
+            rmsp = -999
+            chi2 = -999
+            di2n = -999
+            
             
         prev_di2n = di2n
         
@@ -1192,10 +1210,13 @@ for i in range(len(rtime)):
                 print('       iter is ' + str(itern) + ' di2n is ' + str(di2n) + ' and RMS is ' + str(rmsa))
             itern += 1
         
+                
         # And store each iteration in case we want to investigate how the retrieval
         # function in a sample-by-sampble way
 
         if itern == 1:
+            xsamp = [copy.deepcopy(xtmp)]
+        elif converged == 4:
             xsamp = [copy.deepcopy(xtmp)]
         else:
             xsamp.append(copy.deepcopy(xtmp))
@@ -1208,6 +1229,9 @@ for i in range(len(rtime)):
     elif converged == 2:
         print('Converged (best RMS as RMS drastically increased)')
         print('      final iter is ' + str(old_iter) + ' di2n is ' + str(di2n) + ' and RMS is ' + str(rmsa))
+    elif converged == 4:
+        if verbose >= 1:
+            print('Forward model is linear, no iterations needed')
     else:
         
         # If the retrieval did not converged but performed max_iter iterations
@@ -1268,6 +1292,9 @@ for i in range(len(rtime)):
     # The retrieval RMSE is too large
     if xsamp[-1]['rmsa'] > vip['qc_rms_value']:
         xsamp[-1]['qcflag'] = 3
+    
+    if xsamp[-1]['converged'] == 4:
+        xsamp[-1]['qcflag'] = 0
     
     dindices = Other_functions.compute_dindices(xsamp[-1],vip)
     

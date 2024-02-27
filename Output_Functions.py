@@ -95,6 +95,7 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
         converged_flag.value_1 = '1 indicates convergence in Rodgers sense (i.e., di2n << nX)'
         converged_flag.value_2 = '2 indicates convergence (best rms after rms increased drastically'
         converged_flag.value_3 = '3 indicates convergence (best rms after max_iter)'
+        converged_flag.value_4 = '4 indicates linear forward model so no iterations. Ignore rmsa, rmsp, chi2.'
         
         gamma = fid.createVariable('gamma', 'f4', ('time',))
         gamma.long_name = 'gamma parameter'
