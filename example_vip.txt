@@ -25,9 +25,10 @@ raw_lidar_maxrng         = 5       # Maximum range [km] to use lidar data. Lengt
 raw_lidar_maxsnr         = -5             # Maximum snr [dB] to use lidar data. Length of list should be raw_lidar_number
 raw_lidar_minsnr         = -21            # Maximum snr [dB] to use lidar data. Length of list should be raw_lidar_number
 raw_lidar_altitude       = 329    # Altitude of the lidar [m msl]
-raw_lidar_timedelta      = 3        # Length of window [min] for lidar data to be included in each retrieval time
+raw_lidar_timedelta      = 1        # Length of window [min] for lidar data to be included in each retrieval time
 raw_lidar_fix_heading    = 1
 raw_lidar_fix_csm_azimuths = 1
+raw_lidar_eff_N          = 6
 #
 # This section controls the use of processed lidar data in the retrieval
 #proc_lidar_number        = 0       # Number of lidar data sources used in the retrieval

@@ -65,6 +65,7 @@ def read_vip_file(filename,globatt,verbose):
             'raw_lidar_timedelta':[5],        # Length of window [min] for lidar data to be include in each retrieval time (e.g. 5 means all data within 5 minutes of retrieval time will be used)
             'raw_lidar_fix_csm_azimuths':[0],          # Fix the azimuths of the lidar scans
             'raw_lidar_fix_heading':[0],     # Use the heading in the lidar file to add to the azimuths
+            'raw_lidar_eff_N':-1,            # The effective number samples to use when calculating the lidar error. -1 means use actual N
             
             'proc_lidar_number':0,           # Number of lidar data sources used in the retrieval
             'proc_lidar_type':[0],           # List of lidar types. 0-None, 1-CLAMPS VAD, 2-ARM/NCAR VAD

@@ -198,7 +198,7 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                                 retz, hgt, vrxx[ii, jj, :], left=-999, right=-999)
 
                         temp_sig = Other_functions.wind_estimate(
-                            vrzz[ii], elxx[ii], azxx[ii], retz)
+                            vrzz[ii], elxx[ii], azxx[ii], retz,vip['raw_lidar_eff_N'])
                         vr_varzz[ii, :, :] = temp_sig[None, :]
 
                     #foo = np.where(vr_varzz > 90000)
@@ -356,7 +356,7 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                                 retz, hgt, vrxx[ii, jj, :], left=-999, right=-999)
 
                         temp_sig = Other_functions.wind_estimate(
-                            vrzz[ii], elxx[ii], azxx[ii], retz)
+                            vrzz[ii], elxx[ii], azxx[ii], retz,vip['raw_lidar_eff_N'])
                         vr_varzz[ii, :, :] = temp_sig[None, :]
 
                     vrxx[np.isnan(vrxx)] = -999
@@ -522,7 +522,7 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                             retz, hgt, vrxx[ii, :], left=-999, right=-999)
 
                     temp_sig = Other_functions.wind_estimate(
-                        vrzz, elxx, azxx, retz)
+                        vrzz, elxx, azxx, retz,vip['raw_lidar_eff_N'])
                     vr_varzz[:, :] = temp_sig[None, :]
 
                     vrxx = np.copy(vrzz)
@@ -665,7 +665,7 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                                 retz, hgt, vrxx[ii, jj, :], left=-999, right=-999)
 
                         temp_sig = Other_functions.wind_estimate(
-                            vrzz[ii], elxx[ii], azxx[ii], retz)
+                            vrzz[ii], elxx[ii], azxx[ii], retz,vip['raw_lidar_eff_N'])
                         vr_varzz[ii, :, :] = temp_sig[None, :]
 
 
@@ -831,7 +831,7 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                             retz, hgt, vrxx[ii, :], left=-999, right=-999)
 
                     temp_sig = Other_functions.wind_estimate(
-                        vrzz, elxx, azxx, retz)
+                        vrzz, elxx, azxx, retz,vip['raw_lidar_eff_N'])
                     vr_varzz[:, :] = temp_sig[None, :]
 
                     vrxx = np.copy(vrzz)
