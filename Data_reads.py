@@ -2132,7 +2132,7 @@ def read_insitu(date, retz, rtime, vip, verbose):
                             else:
                                 print('No valid sounding data found')
 
-                        foo = np.where((retz < vip['insitu_minalt'][k[) |
+                        foo = np.where((retz < vip['insitu_minalt'][k]) |
                                    (retz > vip['insitu_maxalt'][k]))
 
                         u_interp[foo] = -999.
