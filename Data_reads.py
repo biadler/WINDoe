@@ -1760,8 +1760,8 @@ def read_insitu(date, retz, rtime, vip, verbose):
                     # We only want to use data between min range and max range so set
                     # everything else to missing
 
-                    foo = np.where((retz < vip['insitu_minalt']) |
-                                   (retz > vip['insitu_maxalt']))
+                    foo = np.where((retz < vip['insitu_minalt'][k]) |
+                                   (retz > vip['insitu_maxalt'][k]))
 
                     u_interp[foo] = -999.
                     v_interp[foo] = -999.
@@ -2131,7 +2131,14 @@ def read_insitu(date, retz, rtime, vip, verbose):
                                 available[k] = 1
                             else:
                                 print('No valid sounding data found')
-                    
+
+                        foo = np.where((retz < vip['insitu_minalt'][k]) |
+                                   (retz > vip['insitu_maxalt'][k]))
+
+                        u_interp[foo] = -999.
+                        v_interp[foo] = -999.
+                        uerr_interp[foo] = -999.
+                        verr_interp[foo] = -999.
                 else:
                     print('No sounding data for retrieval at this time')
                     u_interp = None
