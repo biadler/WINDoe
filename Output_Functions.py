@@ -3,7 +3,7 @@ import numpy as np
 import scipy.io
 import glob
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from netCDF4 import Dataset
 
 ###############################################################################
@@ -12,7 +12,7 @@ from netCDF4 import Dataset
 # find_last_time()
 ###############################################################################
 
-def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilename, verbose):
+def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilename, shour, verbose):
     
     success = 0
     
@@ -193,7 +193,6 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
             raw_type.comment1 = '1 - CLAMPS Halo data'
             raw_type.comment2 = '2 - Windcube 200s lidar'
         
-        
         if vip['proc_lidar_number'] > 0:
             pdim = fid.createDimension('proc_dim', vip['proc_lidar_number'])
             proc_timedelta = fid.createVariable('proc_lidar_timedelta', 'f4', ('proc_dim',))
@@ -214,6 +213,12 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
             prof_type.long_name = 'Type wind profiler data used'
             prof_type.comment1 = '1 - 915 Mhz Profiler'
             prof_type.comment2 = '2 - 449 Mhz Profiler'
+        
+        if vip['keep_file_small'] == 0:
+            nht2 = fid.createDimension('nht2', (nht * 2))
+            cov = fid.createVariable('cov', 'f4', ('time', 'nht2', 'nht2'))
+            cov.long_name = 'Covariance matrix'
+            
             
         # These should be the last three variables in the file
         lat = fid.createVariable('lat', 'f4')
@@ -236,6 +241,7 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
         fid.Prior_dataset_number_profiles = prior['nsonde']
         fid.Number_raw_lidar_sources = vip['raw_lidar_number']
         fid.Number_proc_lidar_sources = vip['proc_lidar_number']
+        fid.shour = shour
         if vip['cons_profiler_type'] > 0:
             fid.Number_wind_profiler_sources = 1
         else:
@@ -352,13 +358,18 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
     obs_max[fsample] = np.nanmax(xret['dimY'][foo])
     obs_min[fsample] = np.nanmin(xret['dimY'][foo])
     
+    # only add the covariance matrix if specified
+    if vip['keep_file_small'] == 0:
+        cov = fid.variables['cov']
+        cov[fsample,:,:] = xret['Sop'][:2*nht,:2*nht]
+    
     fid.close()
     
     success = 1
     
     return success, nfilename
 
-def find_last_time(date,vip,z):
+def find_last_time(date, vip, z, shour):
     
     # Find all of the output files with this date
     
@@ -375,7 +386,18 @@ def find_last_time(date,vip,z):
     
     # Otherwise, let's initialize from the last file
     nfilename = files[-1]
-    fid = Dataset(nfilename,'r')
+    fid = Dataset(nfilename,'r+')
+    
+    # if the shour is not the same, create a new file
+    if fid.shour != shour:
+        # close the previously opened file
+        fid.close()
+        print('The flag output_clober was set to 2 for append, but no prior file was found')
+        print('     so code will run as normal')
+        nfilename = ' '
+        return 0, -999., nfilename
+    
+    # otherwise, continue initializing from the last time
     bt = fid.variables['base_time'][:]
     to = fid.variables['time_offset'][:]
     xz = fid.variables['height'][:]
@@ -383,13 +405,17 @@ def find_last_time(date,vip,z):
     
     secs = bt+to
     
-    
     # A couple very basic checks to makes sure some of the variables in the output
     # file are the same as the current ones
     diff = np.abs(z-xz)
     foo = np.where(diff > 0.001)[0]
     if ((len(xz) != len(z)) or (len(foo) > 0)):
         print('Error: output_clobber is set to 2 (append), but there is a mismatch in heights')
+        return -999, -999, nfilename
+    
+    # if the user wants the covariance matrix, but is appending to a file that didn't previously have the variable, exit
+    if 'cov' not in fid.variables.keys() and vip['keep_file_small'] == 0:
+        print('Error: output clobber is set to 2 (append), but there is no covariance matrix data for the previous timestamps')
         return -999, -999, nfilename
     
     # Return the fsample, last of the secs array, and nfilename

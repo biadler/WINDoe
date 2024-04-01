@@ -227,7 +227,7 @@ for i in range(len(rtime)):
     # If we are to append to the file, then I need to find the last valid
     # sample in the file, so I only process after that point...
     if ((vip['output_clobber'] == 2) and (check_clobber == 1)):
-        fsample, last_sec, noutfilename = Output_Functions.find_last_time(date,vip,z)
+        fsample, last_sec, noutfilename = Output_Functions.find_last_time(date,vip,z, shour)
         check_clobber = 0
         
         if fsample < 0:
@@ -1300,7 +1300,7 @@ for i in range(len(rtime)):
     
     # Write the data into the netCDF file
     success, noutfilename = Output_Functions.write_output(vip, globatt, xsamp[-1], dindices, prior, fsample, (endtime-starttime).total_seconds(),
-                                                          noutfilename, verbose)
+                                                          noutfilename, shour, verbose)
     
     if success == 0:
         print('Error: Problem saving to output file.')
