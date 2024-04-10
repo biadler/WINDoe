@@ -123,14 +123,14 @@ def wind_estimate(vr,el,az,ranges,eff_N,default_sigma=100000,missing=-999):
         
         #sigma[i] = np.sqrt(np.nansum((vr[foo,i] - A.dot(v0))**2)/(len(foo)-3))
         
-        sigma[i] = np.sqrt(np.nansum((vr[foo,i] - A.dot(v0))**2)/N)
+        sigma[i] = np.sqrt(np.nansum((vr[foo,i] - A.dot(v0))**2))/N
         # We are going to try this QC. If there is a significant w component
         # determine the uncertainty with no w component
         
         if np.abs(v0[2]) >= 3:
             vh_0 = (np.linalg.pinv(A[:,:-1].T.dot(A[:,:-1]))).dot(A[:,:-1].T).dot(vr[foo,i])
             
-            temp_sigma = np.sqrt(np.nansum((vr[foo,i] - A[:,:-1].dot(vh_0))**2)/(N+1))
+            temp_sigma = np.sqrt(np.nansum((vr[foo,i] - A[:,:-1].dot(vh_0))**2))/(N+1)
             
             if temp_sigma > sigma[i]:
                 sigma[i] = np.copy(temp_sigma)
