@@ -1373,7 +1373,7 @@ for i in range(len(rtime)):
     
 totaltime = (endtime - starttime).total_seconds()
 
-('Processing took ' + str(totaltime) + ' seconds')
+print('Processing took ' + str(totaltime) + ' seconds')
 
 # Successful exit
 print(('>>> WINDoe retrieval on ' + str(date) + ' ended properly <<<'))
