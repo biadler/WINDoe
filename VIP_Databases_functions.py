@@ -58,7 +58,7 @@ def read_vip_file(filename,globatt,verbose):
             
             'raw_lidar_number':0,            # Number of lidar data sources used in the retrieval
             'raw_lidar_type':[0],            # List of lidar types. 0-None, 1-CLAMPS Halo, 2-Windcube non-dbs
-            eraw_lidar_paths':[None],        # List of paths for the lidar data. Length of list should be same as raw_lidar_number
+            'raw_lidar_paths':[None],        # List of paths for the lidar data. Length of list should be same as raw_lidar_number
             'raw_lidar_minrng':[0],          # Minimum range [km] to use lidar data. Length of list should be same as raw_lidar_number
             'raw_lidar_maxrng':[2],          # Maximum range [km] to use lidar data. Length of list should be same as raw_lidar_number
             'raw_lidar_maxsnr':[-5],
