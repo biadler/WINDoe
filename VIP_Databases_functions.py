@@ -101,6 +101,7 @@ def read_vip_file(filename,globatt,verbose):
             'insitu_minalt':[0],          # Minimum altitude [km] to use insitu data.
             'insitu_maxalt':[2],          # Maximum altitude [km] to use insitu data
             'insitu_timedelta':[5],       # Length of window [min] for insitu data to be included in retrieval
+            'insitu_npts':[1],            # Number of insitu points to use in the retrieval.  Minimum=1, maximum=1000.  Larger number increases the weight of the observation
             
             'use_model':0,             # 0-No model constraint, 1-use a model constraint
             'model_path':'None',              # Path to model data
@@ -199,6 +200,7 @@ def read_vip_file(filename,globatt,verbose):
                         (key == 'insitu_minalt') or
                         (key == 'insitu_maxalt') or
                         (key == 'insitu_timedelta') or
+                        (key == 'insitu_npts') or
                         (key == 'copter_constants') or
                         (key == 'copter_constants_unc') or
                         (key == 'zgrid')):

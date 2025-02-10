@@ -467,7 +467,7 @@ for i in range(len(rtime)):
                 sigY.extend(insitu['u_error'][j][foo].ravel())
                 Sy.extend(insitu['u_error'][j][foo].ravel()**2)
                 flagY.extend(np.ones(len(insitu['u'][j][foo].ravel()))*6)
-                dimY.extend(insitu['height'][j][foo[0]])
+                dimY.extend(insitu['height'][j][foo].ravel())
                 azY.extend(np.ones(len(insitu['u'][j][foo])).ravel()*-999)
                 elY.extend(np.ones(len(insitu['u'][j][foo])).ravel()*-999)
                 
@@ -486,7 +486,7 @@ for i in range(len(rtime)):
                 sigY.extend(insitu['v_error'][j][foo].ravel())
                 Sy.extend(insitu['v_error'][j][foo].ravel()**2)
                 flagY.extend(np.ones(len(insitu['v'][j][foo].ravel()))*7)
-                dimY.extend(insitu['height'][j][foo[0]])
+                dimY.extend(insitu['height'][j][foo].ravel())
                 azY.extend(np.ones(len(insitu['v'][j][foo])).ravel()*-999)
                 elY.extend(np.ones(len(insitu['v'][j][foo])).ravel()*-999)
 
@@ -613,7 +613,7 @@ for i in range(len(rtime)):
             dimY.extend(copter['height'][foo[0]])
             azY.extend(copter['yaw'][foo].ravel())
             elY.extend(np.ones(len(copter['roll'][foo])).ravel()*-999)
-        
+
     Y = np.array(Y)
     sigY = np.array(sigY)
     flagY = np.array(flagY)

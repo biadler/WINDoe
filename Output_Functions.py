@@ -225,6 +225,41 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
             cov = fid.createVariable('cov', 'f4', ('time', 'nht2', 'nht2'))
             cov.long_name = 'Covariance matrix'
             
+            # save observation vector, etc, but if it is not lidar raw data
+            obsvecidx = np.where(xret['flagY']>1)[0]
+            if len(obsvecidx)>0:
+                obs_dim = fid.createDimension('obs_dim',len(obsvecidx))
+                obs_vector = fid.createVariable('obs_vector','f4',('time','obs_dim'))
+                obs_vector.long_name = 'Observation vector Y'
+                obs_vector.comment1 = 'mixed units -- see obs_flag field above'
+
+                obs_flag = fid.createVariable('obs_flag', 'i2', ('obs_dim',))
+                obs_flag.long_name = 'Flag indicating type of observation for each vector element'
+                obs_flag.comment1 = 'unitless'
+
+                obs_dimension = fid.createVariable('obs_dimension', 'f8', ('obs_dim',))
+                obs_dimension.long_name = 'Dimension of the observation vector'
+                obs_dimension.comment1 = 'mixed units -- see obs_flag field above'
+
+                obs_vector_uncertainty = fid.createVariable('obs_vector_uncertainty', 'f4', ('time','obs_dim',))
+                obs_vector_uncertainty.long_name = '1-sigma uncertainty in the observation vector (sigY)'
+                obs_vector_uncertainty.comment1 = 'mixed units -- see obs_flag field above'
+
+                forward_calc = fid.createVariable('forward_calc', 'f4', ('time','obs_dim',))
+                forward_calc.long_name = 'Forward calculation from state vector (i.e., F(Xn))'
+                forward_calc.comment1 = 'mixed units -- see obs_flag field above'
+
+            #Xa = fid.createVariable('Xa', 'f8', ('arb_dim1',))
+            #Xa.long_name = 'Prior mean state'
+            #Xa.comment1 = 'mixed units -- see field arb above'
+            #Xa.variable_type = varType_diagnostic
+
+            #Sa = fid.createVariable('Sa', 'f8', ('arb_dim1','arb_dim2',))
+            #Sa.long_name = 'Prior covariance'
+            #Sa.comment1 = 'mixed units -- see field arb above'
+            #Sa.variable_type = varType_diagnostic
+
+            
             
         # These should be the last three variables in the file
         lat = fid.createVariable('lat', 'f4')
@@ -267,7 +302,11 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
         if vip['cons_profiler_type'] > 0:
             profiler_timedelta[:] = vip['cons_profiler_timedelta']
             prof_type[:] = vip['cons_profiler_type']
-        
+        if vip['keep_file_small'] == 0:
+            obsvecidx = np.where(xret['flagY']>1)[0]
+            if len(obsvecidx)>0:
+                obs_flag[:] = xret['flagY'][obsvecidx]
+                obs_dimension[:] = xret['dimY'][obsvecidx]
         lat[:] = vip['station_lat']
         lon[:] = vip['station_lon']
         alt[:] = vip['station_alt']
@@ -373,6 +412,15 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
     if vip['keep_file_small'] == 0:
         cov = fid.variables['cov']
         cov[fsample,:,:] = xret['Sop'][:2*nht,:2*nht]
+
+        obsvecidx = np.where(xret['flagY']>1)[0]
+        if len(obsvecidx)>0:
+            obs_vector = fid.variables['obs_vector']
+            obs_vector[fsample,:] = xret['Y'][obsvecidx]
+            obs_vector_uncertainty = fid.variables['obs_vector_uncertainty']
+            obs_vector_uncertainty[fsample,:] = xret['sigY'][obsvecidx]
+            forward_calc = fid.variables['forward_calc']
+            forward_calc[fsample,:] = xret['FXn'][obsvecidx]
     
     fid.close()
     

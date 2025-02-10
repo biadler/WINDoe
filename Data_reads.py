@@ -886,7 +886,6 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
             vr_var.append(np.copy(vr_varxx))
 
     # Build the output dictionary and return it
-
     raw_lidar = {'success': 1, 'time': lsecs, 'range': rng, 'z': retz, 'azimuth': az, 'elevation': el,
                  'vr': vr, 'vr_var': vr_var, 'valid': available}
 
@@ -1850,7 +1849,6 @@ def read_insitu(date, retz, rtime, vip, verbose):
                     else:
                         uxx = np.append(uxx, ux)
                         vxx = np.append(vxx, vx)
-
                 if not no_data:
                     foo = np.where((np.abs(uxx) > 100.) | (np.abs(vxx) > 100.))
                     uxx[foo] = np.nan
@@ -1888,7 +1886,6 @@ def read_insitu(date, retz, rtime, vip, verbose):
 
                     if u_interp[0] > -100:
                         available[k] = 1
-
                 else:
                     print('No ARM met station data for retrieval at this time')
                     u_interp = None
@@ -1896,7 +1893,6 @@ def read_insitu(date, retz, rtime, vip, verbose):
                     uerr_interp = None
                     verr_interp = None
                     z_interp = None
-
         if vip['insitu_type'][k] == 3:
             if verbose >= 1:
                 print('Reading in CLAMPS met station data')
@@ -1982,7 +1978,7 @@ def read_insitu(date, retz, rtime, vip, verbose):
                         available[k] = 1
 
                 else:
-                    print('No CLAMPS met station data for retrieval at this time')
+                    print('No ARM met station data for retrieval at this time')
                     u_interp = None
                     v_interp = None
                     uerr_interp = None
@@ -2435,12 +2431,46 @@ def read_insitu(date, retz, rtime, vip, verbose):
                     uerr_interp = None
                     verr_interp = None
                     z_interp = None
-                    
+        
+        # Now I need to build arrays for each suface sample, so that I can
+        # replicate a point multiple times if desired. I don't want to make each
+        # of the replicates the same as the original, so I will insert 1/10th of
+        # the random error into the time-series...
+        
+
+        if len(u_interp) > 0 and vip['insitu_type'][k]<3:
+            print('replicate insitu surface value')
+            vip['insitu_type'][k]
+            u1 = np.zeros((int(vip['insitu_npts'][k]),len(u_interp)))
+            su1 = np.zeros((int(vip['insitu_npts'][k]),len(u_interp)))
+            v1 = np.zeros((int(vip['insitu_npts'][k]),len(u_interp)))
+            sv1 = np.zeros((int(vip['insitu_npts'][k]),len(u_interp)))
+            u1[0,:] = u_interp
+            su1[0,:] = verr_interp
+            v1[0,:] = v_interp
+            sv1[0,:] = verr_interp
+            for j in range(1,int(vip['insitu_npts'][k])):
+                u1[j,:] = u_interp + np.random.normal(size = len(u_interp))*uerr_interp/10.
+                su1[j,:] = np.copy(uerr_interp)
+                v1[j,:] = v_interp + np.random.normal(size = len(u_interp))*verr_interp/10.
+                sv1[j,:] = np.copy(verr_interp)
+            u_interp=u1
+            uerr_interp=su1
+            v_interp=v1
+            verr_interp=sv1
+            z_interp=np.full(u_interp.shape,z_interp)
+
+
+
+
+
+
         u.append(u_interp)
         v.append(v_interp)
         u_error.append(uerr_interp)
         v_error.append(verr_interp)
         zs.append(z_interp)
+
 
     # Build the output dictionary and return it
 
