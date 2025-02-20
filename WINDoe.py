@@ -319,7 +319,7 @@ for i in range(len(rtime)):
         windoe['valid'] = 0
     
     # There needs to be some type of observational data
-    if ((len(raw_foo) == 0) & (len(proc_foo) == 0) & (len(insitu_foo) == 0) & (prof_cons['valid'] == 0) &
+    if ((len(raw_foo) == 0) & (len(proc_foo) == 0) & (len(insitu_foo) == 0) & (len(prof_cons) == 0) &
         (len(prof_foo) == 0) & (copter['valid'] == 0)):
         print('Sample ' + str(i) + ' at ' + str(rtime_hour[i]) + ' UTC -- no valid data found.')
         continue
@@ -417,39 +417,40 @@ for i in range(len(rtime)):
                 elY.extend(np.ones(len(proc_lidar['v'][j][foo])).ravel()*-999)
     
     if prof_cons['success'] > 0:
-        if prof_cons['valid'] == 1:
-            foo = np.where((prof_cons['u'] >= -500) & (prof_cons['u_error'] >= -500) &
-                           (prof_cons['v'] >= -500) & (prof_cons['v_error'] >= -500))
-        
-            if len(foo[0]) == 0:
-                print('Major error when adding consensus wind profiler data to observation vector. This should not happen!')
-                VIP_Databases_functions.abort(date)
-                sys.exit()
-        
-            Y.extend(prof_cons['u'][foo].ravel())
-            sigY.extend(prof_cons['u_error'][foo].ravel())
-            Sy.extend(prof_cons['u_error'][foo].ravel()**2)
-            flagY.extend(np.ones(len(prof_cons['u'][foo].ravel()))*4)
-            dimY.extend(prof_cons['height'][foo[0]])
-            azY.extend(np.ones(len(prof_cons['u'][foo])).ravel()*-999)
-            elY.extend(np.ones(len(prof_cons['u'][foo])).ravel()*-999)
+        for j in range(vip['cons_profiler_number']):
+            if prof_cons['valid'][j] == 1:
+                foo = np.where((prof_cons['u'][j] >= -500) & (prof_cons['u_error'][j] >= -500) &
+                               (prof_cons['v'][j] >= -500) & (prof_cons['v_error'][j] >= -500))
             
-        if prof_cons['valid'] == 1:
-            foo = np.where((prof_cons['u'] >= -500) & (prof_cons['u_error'] >= -500) &
-                           (prof_cons['v'] >= -500) & (prof_cons['v_error'] >= -500))
-        
-            if len(foo[0]) == 0:
-                print('Major error when adding consensus wind profiler data to observation vector. This should not happen!')
-                VIP_Databases_functions.abort(date)
-                sys.exit()
-        
-            Y.extend(prof_cons['v'][foo].ravel())
-            sigY.extend(prof_cons['v_error'][foo].ravel())
-            Sy.extend(prof_cons['v_error'][foo].ravel()**2)
-            flagY.extend(np.ones(len(prof_cons['v'][foo].ravel()))*5)
-            dimY.extend(prof_cons['height'][foo[0]])
-            azY.extend(np.ones(len(prof_cons['v'][foo])).ravel()*-999)
-            elY.extend(np.ones(len(prof_cons['v'][foo])).ravel()*-999)
+                if len(foo[0]) == 0:
+                    print('Major error when adding consensus wind profiler data to observation vector. This should not happen!')
+                    VIP_Databases_functions.abort(date)
+                    sys.exit()
+            
+                Y.extend(prof_cons['u'][j][foo].ravel())
+                sigY.extend(prof_cons['u_error'][j][foo].ravel())
+                Sy.extend(prof_cons['u_error'][j][foo].ravel()**2)
+                flagY.extend(np.ones(len(prof_cons['u'][j][foo].ravel()))*4)
+                dimY.extend(prof_cons['height'][foo[0]])
+                azY.extend(np.ones(len(prof_cons['u'][j][foo])).ravel()*-999)
+                elY.extend(np.ones(len(prof_cons['u'][j][foo])).ravel()*-999)
+        for j in range(vip['cons_profiler_number']):
+            if prof_cons['valid'][j] == 1:
+                foo = np.where((prof_cons['u'][j] >= -500) & (prof_cons['u_error'][j] >= -500) &
+                               (prof_cons['v'][j] >= -500) & (prof_cons['v_error'][j] >= -500))
+            
+                if len(foo[0]) == 0:
+                    print('Major error when adding consensus wind profiler data to observation vector. This should not happen!')
+                    VIP_Databases_functions.abort(date)
+                    sys.exit()
+            
+                Y.extend(prof_cons['v'][j][foo].ravel())
+                sigY.extend(prof_cons['v_error'][j][foo].ravel())
+                Sy.extend(prof_cons['v_error'][j][foo].ravel()**2)
+                flagY.extend(np.ones(len(prof_cons['v'][j][foo].ravel()))*5)
+                dimY.extend(prof_cons['height'][foo[0]])
+                azY.extend(np.ones(len(prof_cons['v'][j][foo])).ravel()*-999)
+                elY.extend(np.ones(len(prof_cons['v'][j][foo])).ravel()*-999)
     
     if insitu['success'] > 0:
         for j in range(vip['insitu_number']):

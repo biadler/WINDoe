@@ -210,15 +210,17 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
             proc_type.comment1 = '1 - CLAMPS VAD'
             proc_type.comment2 = '2 - ARM/NCAR VAD'
 
-        if vip['cons_profiler_type'] > 0:
-            profiler_timedelta = fid.createVariable('wind_profiler_timedelta', 'f4')
+        if vip['cons_profiler_number'] > 0:
+            pdim = fid.createDimension('proc_dim', vip['cons_profiler_number'])
+            profiler_timedelta = fid.createVariable('wind_profiler_timedelta', 'f4',('proc_dim',))
             profiler_timedelta.long_name = 'Time window for wind profiler data to be included in the retrieval'
             profiler_timedelta.units = 'min'
         
-            prof_type = fid.createVariable('wind_profiler_type', 'i2')
+            prof_type = fid.createVariable('wind_profiler_type', 'i2', ('proc_dim',))
             prof_type.long_name = 'Type wind profiler data used'
-            prof_type.comment1 = '1 - 915 Mhz Profiler'
-            prof_type.comment2 = '2 - 449 Mhz Profiler'
+            prof_type.comment1 = '1 - NCAR 449 Mhz Profiler'
+            prof_type.comment2 = '2 - NOAA 915 Mhz Profiler high-res'
+            prof_type.comment2 = '3 - NOAA 915 Mhz Profiler low-res'
         
         if vip['keep_file_small'] == 0:
             nht2 = fid.createDimension('nht2', (nht * 2))
@@ -283,8 +285,8 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
         fid.Number_raw_lidar_sources = vip['raw_lidar_number']
         fid.Number_proc_lidar_sources = vip['proc_lidar_number']
         fid.shour = shour
-        if vip['cons_profiler_type'] > 0:
-            fid.Number_wind_profiler_sources = 1
+        if vip['cons_profiler_number'] > 0:
+            fid.Number_wind_profiler_sources = vip['cons_profiler_number']
         else:
             fid.Number_wind_profiler_sources = 0
         fid.Total_clock_execution_time_in_s = exectime
@@ -299,9 +301,9 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
         if vip['proc_lidar_number'] > 0:
             proc_timedelta = np.array(vip['proc_lidar_timedelta'])
             proc_type = np.array(vip['proc_lidar_type'])
-        if vip['cons_profiler_type'] > 0:
-            profiler_timedelta[:] = vip['cons_profiler_timedelta']
-            prof_type[:] = vip['cons_profiler_type']
+        if vip['cons_profiler_number'] > 0:
+            profiler_timedelta = np.array(vip['cons_profiler_timedelta'])
+            prof_type = np.array(vip['cons_profiler_type'])
         if vip['keep_file_small'] == 0:
             obsvecidx = np.where(xret['flagY']>1)[0]
             if len(obsvecidx)>0:
@@ -412,8 +414,8 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
     if vip['keep_file_small'] == 0:
         cov = fid.variables['cov']
         cov[fsample,:,:] = xret['Sop'][:2*nht,:2*nht]
-
-        obsvecidx = np.where(xret['flagY']>1)[0]
+        #no wind profiler for now, because lenght of obs differs for each time because heights with missing values are removed
+        obsvecidx = np.where(xret['flagY']>5)[0]
         if len(obsvecidx)>0:
             obs_vector = fid.variables['obs_vector']
             obs_vector[fsample,:] = xret['Y'][obsvecidx]

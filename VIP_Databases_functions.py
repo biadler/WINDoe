@@ -78,12 +78,13 @@ def read_vip_file(filename,globatt,verbose):
             'proc_lidar_altitude':[0],       # Altitude of the lidar [m msl]
             'proc_lidar_timedelta':[5],      # Length of window [min] for lidar data to be include in each retrieval time (e.g. 5 means all data within 5 minutes of retrieval time will be used)
             
-            'cons_profiler_type':0,       # Type of wind profiler. 0-None, 1-NCAR 449Mhz profiler
-            'cons_profiler_path': 'None',   # Path to wind profiler data
-            'cons_profiler_minalt':0.,     # Minimum range [km] to use the lidar data
-            'cons_profiler_maxalt':0.,     # Maximum range [km] to use the wind profiler data
-            'cons_profiler_alitude':0.,    # Altitude of the wind profiler [m msl]
-            'cons_profiler_timedelta':5.,  # Length of window [min] for lidar data to be included in each retreival time
+            'cons_profiler_number':0,        # Number of profiler data sources used in the retrieval
+            'cons_profiler_type':[0],       # Type of wind profiler. 0-None, 1-NCAR 449Mhz profiler
+            'cons_profiler_paths': [None],   # Path to wind profiler data
+            'cons_profiler_minalt':[0],     # Minimum range [km] to use the lidar data
+            'cons_profiler_maxalt':[5],     # Maximum range [km] to use the wind profiler data
+            'cons_profiler_alitude':[0],    # Altitude of the wind profiler [m msl]
+            'cons_profiler_timedelta':[5],  # Length of window [min] for lidar data to be included in each retreival time
             
             'raw_profiler_number':0,      # Number of profiler data sources used in the retrieval
             'raw_profiler_type':[0],        # Type of wind profiler. 0-None, 1-ARM 915 MHz wind profiler
@@ -187,6 +188,12 @@ def read_vip_file(filename,globatt,verbose):
                         (key == 'proc_lidar_maxalt') or
                         (key == 'proc_lidar_altitude') or
                         (key == 'proc_lidar_timedelta') or
+                        (key == 'cons_profiler_type') or
+                        (key == 'cons_profiler_paths') or
+                        (key == 'cons_profiler_minalt') or
+                        (key == 'cons_profiler_maxalt') or
+                        (key == 'cons_profiler_altitude') or
+                        (key == 'cons_profiler_timedelta') or
                         (key == 'raw_profiler_type') or
                         (key == 'raw_profiler_paths') or
                         (key == 'raw_profiler_minalt') or
@@ -231,17 +238,16 @@ def read_vip_file(filename,globatt,verbose):
                             if len(feh) != 2:
                                 print('Error: The key ' + key + ' in VIP file must be length 2')
                                 return vip
-                        elif key[0:3] == 'con':
+                        elif key[0:5] == 'conse':
                             if len(feh) != vip['raw_profiler_number']:
                                 print('Error: The key ' + key + ' in VIP file must be the same length as '
                                       + ' profiler_number ( ' + str(vip['raw_profiler_number']) + ')')
                                 return vip
                         vip[key] = []
                         for x in feh:
-                            if (key == 'raw_lidar_paths') or (key == 'proc_lidar_paths') or (key == 'insitu_paths') or (key == 'raw_profiler_paths'):
+                            if (key == 'raw_lidar_paths') or (key == 'proc_lidar_paths') or (key == 'insitu_paths') or (key == 'raw_profiler_paths') or (key == 'cons_profiler_paths'):
                                 vip[key].append(x.strip())
-                            elif ((key == 'raw_lidar_type') or (key == 'raw_lidar_type') or (key == 'insitu_type') or (key == 'raw_profiler_type') or
-                                 (key == 'raw_lidar_fix_csm_azimuths') or (key == 'raw_lidar_fix_heading')):
+                            elif ((key == 'raw_lidar_type') or (key == 'raw_lidar_type') or (key == 'insitu_type') or (key == 'raw_profiler_type') or (key == 'cons_profiler_type') or (key == 'raw_lidar_fix_csm_azimuths') or (key == 'raw_lidar_fix_heading')):
                                 vip[key].append(int(x))
                             else:
                                 vip[key].append(float(x))
@@ -312,8 +318,9 @@ def check_vip(vip):
         print('Error: lidar_type can only be set to 0, 1, 2, 3')
         flag = 1
     
-    if ((vip['cons_profiler_type'] < 0) or (vip['cons_profiler_type'] > 2)):
-        print('Error: The wind_profiler_type can only be set to 0, 1, or 2')
+    foo = np.where((np.array(vip['cons_profiler_type']) < 0) | (np.array(vip['cons_profiler_type']) > 4))[0]
+    if len(foo) > 0:
+        print('Error: The wind_profiler_type can only be set to 0, 1, or 2, 3')
         flag = 1
         
     if vip['tres'] <= 0:
@@ -321,7 +328,7 @@ def check_vip(vip):
         flag = 1
     
     if ((vip['raw_lidar_number'] == 0) and (vip['proc_lidar_number'] == 0) and (vip['raw_profiler_number'] == 0)
-         and (vip['cons_profiler_type'] == 0) and (vip['use_copter'] == 0)):
+         and (vip['cons_profiler_number'] == 0) and (vip['use_copter'] == 0)):
         print('Error: No lidar data, wind profiler, or copter data was selected as input')
         flag = 1
     
