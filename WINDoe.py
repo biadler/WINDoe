@@ -351,7 +351,8 @@ for i in range(len(rtime)):
     # Also need to keep track of dimensions (elevation, azimuths, height, range, etc.)
     # For raw lidar data height will be range to keep the number of arrays I need to a minimum
     # Processed lidar data will get misssing values for elevatin and azimuth
-    
+    # keep all observations and dims (even missing ones) in separate arrays to save to output file
+
     Y = []
     Sy = []
     sigY = []
@@ -359,6 +360,7 @@ for i in range(len(rtime)):
     flagY = []
     azY = []
     elY = []
+
     if raw_lidar['success'] > 0:
         for j in range(vip['raw_lidar_number']):
             if raw_lidar['valid'][j] == 1:
@@ -376,7 +378,7 @@ for i in range(len(rtime)):
                 dimY.extend(raw_lidar['z'][foo[0]].ravel())
                 azY.extend((raw_lidar['azimuth'][j][foo[1]]).ravel())
                 elY.extend((raw_lidar['elevation'][j][foo[1]]).ravel())
-                
+  
     if proc_lidar['success'] > 0:
         for j in range(vip['proc_lidar_number']):
             if proc_lidar['valid'][j] == 1:
@@ -396,7 +398,7 @@ for i in range(len(rtime)):
                 dimY.extend(proc_lidar['height'][foo[0]])
                 azY.extend(np.ones(len(proc_lidar['u'][j][foo])).ravel()*-999)
                 elY.extend(np.ones(len(proc_lidar['u'][j][foo])).ravel()*-999)
-                
+ 
         for j in range(vip['proc_lidar_number']):
             if proc_lidar['valid'][j] == 1:
             
@@ -415,7 +417,7 @@ for i in range(len(rtime)):
                 dimY.extend(proc_lidar['height'][foo[0]])
                 azY.extend(np.ones(len(proc_lidar['v'][j][foo])).ravel()*-999)
                 elY.extend(np.ones(len(proc_lidar['v'][j][foo])).ravel()*-999)
-    
+   
     if prof_cons['success'] > 0:
         for j in range(vip['cons_profiler_number']):
             if prof_cons['valid'][j] == 1:
@@ -434,6 +436,7 @@ for i in range(len(rtime)):
                 dimY.extend(prof_cons['height'][foo[0]])
                 azY.extend(np.ones(len(prof_cons['u'][j][foo])).ravel()*-999)
                 elY.extend(np.ones(len(prof_cons['u'][j][foo])).ravel()*-999)
+
         for j in range(vip['cons_profiler_number']):
             if prof_cons['valid'][j] == 1:
                 foo = np.where((prof_cons['u'][j] >= -500) & (prof_cons['u_error'][j] >= -500) &
@@ -471,7 +474,7 @@ for i in range(len(rtime)):
                 dimY.extend(insitu['height'][j][foo].ravel())
                 azY.extend(np.ones(len(insitu['u'][j][foo])).ravel()*-999)
                 elY.extend(np.ones(len(insitu['u'][j][foo])).ravel()*-999)
-                
+
         for j in range(vip['insitu_number']):
             if insitu['valid'][j] == 1:
             
@@ -622,6 +625,7 @@ for i in range(len(rtime)):
     azY = np.array(azY)
     elY = np.array(elY)
 
+     
     zmin = np.nanmin(dimY)
     zmax = np.nanmax(dimY)
     
@@ -1164,7 +1168,9 @@ for i in range(len(rtime)):
         # prevent overfitting
         # TODO: Make noise floor part of namelist
         Sy = np.array(Sy)
-        foo = np.where((flagY <= 12) & (Sy<1))
+        #foo = np.where((flagY <= 12) & (Sy<1))
+        #I also do not want it for cons_profiler
+        foo = np.where((flagY <= 12) & (flagY != 4) & (flagY !=5) &  (Sy<1))
         Sy[foo] = 1
         sigY[foo] = 1
         
