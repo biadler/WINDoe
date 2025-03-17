@@ -251,19 +251,18 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
                 forward_calc = fid.createVariable('forward_calc', 'f4', ('time','obs_dim',))
                 forward_calc.long_name = 'Forward calculation from state vector (i.e., F(Xn))'
                 forward_calc.comment1 = 'mixed units -- see obs_flag field above'
+                        
+        # for prior informatoin
+        arb_dim1 = fid.createDimension('arb_dim1',None)
+        Xa = fid.createVariable('Xa', 'f8', ('arb_dim1',))
+        Xa.long_name = 'Prior mean state'
+        Xa.units = 'm/s'
 
-            #Xa = fid.createVariable('Xa', 'f8', ('arb_dim1',))
-            #Xa.long_name = 'Prior mean state'
-            #Xa.comment1 = 'mixed units -- see field arb above'
-            #Xa.variable_type = varType_diagnostic
+        Sa = fid.createVariable('Sa', 'f8', ('arb_dim1','arb_dim1',))
+        Sa.long_name = 'Prior covariance'
+        Sa.units = 'm2/s2'
 
-            #Sa = fid.createVariable('Sa', 'f8', ('arb_dim1','arb_dim2',))
-            #Sa.long_name = 'Prior covariance'
-            #Sa.comment1 = 'mixed units -- see field arb above'
-            #Sa.variable_type = varType_diagnostic
 
-            
-            
         # These should be the last three variables in the file
         lat = fid.createVariable('lat', 'f4')
         lat.long_name = 'latitude'
@@ -305,10 +304,15 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
         if vip['cons_profiler_number'] > 0:
             profiler_timedelta = np.array(vip['cons_profiler_timedelta'])
             prof_type = np.array(vip['cons_profiler_type'])
+        
+        Xa[:] = prior['Xa']
+        Sa[:,:] = prior['Sa']
+
         lat[:] = vip['station_lat']
         lon[:] = vip['station_lon']
         alt[:] = vip['station_alt']
-        
+
+                
         fid.close()
     
     # Now append the sample from xret into the file
@@ -424,6 +428,7 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
             obs_dimension[fsample,:] = xret['dimY'][obsvecidx]
             forward_calc = fid.variables['forward_calc']
             forward_calc[fsample,:] = xret['FXn'][obsvecidx]
+
     
     fid.close()
     

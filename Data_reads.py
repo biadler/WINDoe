@@ -1335,7 +1335,7 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                     verr_interp = None
 
         # Read in Windcube V1 file
-        # For the error we are going to use the wind component standard deviation
+        # For the error we are going to use the sum of the wind component standard deviation and mean spectral broadening for 2 min period  
         elif vip['proc_lidar_type'][k] == 4:
             if verbose >= 1:
                 print('Reading in processed Windcube V1 file')
@@ -1378,8 +1378,10 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                     vx = -fid.variables['Vhm'][foo,:]*np.cos(fid.variables['Azim'][foo,:]*np.pi/180.)
                     # ux = fid.variables['um'][foo, :]
                     # vx = fid.variables['vm'][foo, :]
-                    u_err = fid.variables['du'][foo, :]
-                    v_err = fid.variables['dv'][foo, :]
+                    # u_err = fid.variables['du'][foo, :]
+                    # v_err = fid.variables['dv'][foo, :]
+                    u_err = fid.variables['du'][foo, :] + fid.variables['spectral_broadening'][foo,:]
+                    v_err = fid.variables['dv'][foo, :] + fid.variables['spectral_broadening'][foo,:]
 
                     fid.close()
                     if no_data:

@@ -1168,9 +1168,9 @@ for i in range(len(rtime)):
         # prevent overfitting
         # TODO: Make noise floor part of namelist
         Sy = np.array(Sy)
-        #foo = np.where((flagY <= 12) & (Sy<1))
+        foo = np.where((flagY <= 12) & (Sy<1))
         #I also do not want it for cons_profiler
-        foo = np.where((flagY <= 12) & (flagY != 4) & (flagY !=5) &  (Sy<1))
+        #foo = np.where((flagY <= 12) & (flagY != 4) & (flagY !=5) &  (Sy<1))
         Sy[foo] = 1
         sigY[foo] = 1
         
