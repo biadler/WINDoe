@@ -5,6 +5,7 @@ import glob
 import sys
 from datetime import datetime, timezone
 from netCDF4 import Dataset
+from collections import Counter
 
 ###############################################################################
 # This file contains the following functions:
@@ -226,6 +227,16 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
             nht2 = fid.createDimension('nht2', (nht * 2))
             cov = fid.createVariable('cov', 'f4', ('time', 'nht2', 'nht2'))
             cov.long_name = 'Covariance matrix'
+           
+            # count how many observations per type are used at each time stamp
+            obsflag_dim = fid.createDimension('obsflag_dim',None)
+            obscount_flag = fid.createVariable('obscount_flag','i2',('time','obsflag_dim',))
+            obscount_flag.long_name = 'Number of different observation types per profile'
+            obscount_flag.comment1 = 'Counts how many observations of a certain platform are used per profile'
+            obsunique_flag = fid.createVariable('obsunique_flag','i2',('time','obsflag_dim',))
+            obsunique_flag.long_name = 'Unique observations per profile'
+            obsunique_flag.comment1 = 'Flags of unique observations per profile'
+
             
             # save observation vector, etc, if it is not lidar raw data
             obsvecidx = np.where(xret['flagY']>1)[0]
@@ -428,6 +439,18 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
             obs_dimension[fsample,:] = xret['dimY'][obsvecidx]
             forward_calc = fid.variables['forward_calc']
             forward_calc[fsample,:] = xret['FXn'][obsvecidx]
+            
+            # save how many obs per type were used 
+            c = Counter(xret['flagY'])
+            obsflagunique = np.unique(xret['flagY'])
+            obsflagcount = np.full((len(obsflagunique)),np.nan)
+            for i in range(len(obsflagunique)): 
+                obsflagcount[i]=c[obsflagunique[i]]
+            obscount_flag = fid.variables['obscount_flag']
+            obscount_flag[fsample,:] = obsflagcount
+            obsunique_flag = fid.variables['obsunique_flag']
+            obsunique_flag[fsample,:] = obsflagunique
+
 
     
     fid.close()
