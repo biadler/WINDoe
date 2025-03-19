@@ -4,6 +4,7 @@ from scipy import interpolate
 from netCDF4 import Dataset
 import calendar
 from datetime import datetime, timedelta, timezone
+import numpy.ma as ma
 
 
 import VIP_Databases_functions
@@ -880,7 +881,7 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
             el.append(np.copy(elxx.ravel()))
             vr.append(np.copy(vrxx))
             vr_var.append(np.copy(vr_varxx))
-
+    
     # Build the output dictionary and return it
     raw_lidar = {'success': 1, 'time': lsecs, 'range': rng, 'z': retz, 'azimuth': az, 'elevation': el,
                  'vr': vr, 'vr_var': vr_var, 'valid': available}
@@ -1660,6 +1661,11 @@ def read_prof_cons(date, retz, rtime, vip, verbose):
                     wspd = fid.variables['wind_speed'][foo, mode, hidx]
                     wdir = fid.variables['wind_direction'][foo, mode, hidx]
 
+                    # apply quality flag, 0 and 2 are good
+                    qcflag = fid.variables['wind_quality'][foo,mode,hidx]
+                    wspd[qcflag >2]=ma.masked
+                    wdir[qcflag >2]=ma.masked
+
                     fid.close()
 
                     ux = -wspd * np.sin(np.deg2rad(wdir))
@@ -1792,7 +1798,12 @@ def read_prof_cons(date, retz, rtime, vip, verbose):
                     zx = zx[hidx]
                     wspd = fid.variables['wind_speed'][foo, mode, hidx]
                     wdir = fid.variables['wind_direction'][foo, mode, hidx]
-
+                    
+                    # apply quality flag, 0 and 2 are good  
+                    qcflag = fid.variables['wind_quality'][foo,mode,hidx]
+                    wspd[qcflag >2]=ma.masked
+                    wdir[qcflag >2]=ma.masked
+                    
                     fid.close()
 
                     ux = -wspd * np.sin(np.deg2rad(wdir))
@@ -2278,9 +2289,9 @@ def read_insitu(date, retz, rtime, vip, verbose):
                         verr_interp = 1.0
 
                     # This is all 10-m data
-                    z_interp = np.array([retz[0]])
+                    #z_interp = np.array([retz[0]])
                     #lowest retz is usually 0 m, set manually to 10 m
-                    #z_interp = np.array([0.010])
+                    z_interp = np.array([0.010])
 
                     u_interp = np.array([u_interp])
                     v_interp = np.array([v_interp])
