@@ -112,7 +112,10 @@ def wind_estimate(vr,el,az,ranges,eff_N,sig_thresh = 9,default_sigma=100000,miss
             N = np.copy(eff_N)
         else:
             N = len(foo)-3
-            
+
+           
+                
+
         A = np.ones((len(foo),3))
         A[:,0] = np.sin(np.deg2rad(az[foo]))*np.cos(np.deg2rad(el[foo]))
         A[:,1] = np.cos(np.deg2rad(az[foo]))*np.cos(np.deg2rad(el[foo]))
@@ -139,10 +142,87 @@ def wind_estimate(vr,el,az,ranges,eff_N,sig_thresh = 9,default_sigma=100000,miss
             if temp_sigma > sigma[i]:
                 sigma[i] = np.copy(temp_sigma)
                 thresh_sigma[i] = np.copy(temp_thresh_sigma)
-    
+  
     sigma[thresh_sigma > sig_thresh] = default_sigma
     
     return sigma, thresh_sigma
+
+# This is the ARM VAD function that is used to get error estimates for the radial
+# velocity values
+# radial velocities values are averaged for common full  azimuth to reduce the number of samples used in the retrieval
+    
+def wind_estimate_average(vr,el,az,ranges,eff_N,sig_thresh = 9,default_sigma=100000,missing=-999):
+    
+    # Initialize the arrays
+    sigma = np.ones(len(ranges))*np.nan
+    thresh_sigma = np.ones(len(ranges))*np.nan
+    
+    coords = az + 1j*el
+    #unique azimuth angles, this is used for averaging vr later
+    azu = np.unique(np.round(az))
+    vrzz = np.ones((len(azu),len(ranges)))*np.nan
+    if len(np.unique(np.round(el))) > 1:
+        print('Elevation angles are not uniform, averaging radial velocities should not be done!')
+    else:
+        elu = np.ones(len(azu))*np.unique(np.round(el))
+    # Loop over all the ranges
+    for i in range(len(ranges)):
+
+        # Search for missing data
+        
+        foo = np.where((~np.isnan(vr[:,i])) & (vr[:,i]!=missing))[0]
+        junk, count = np.unique(coords[foo],return_counts=True)
+        
+        # Need at least 4 unique positions
+        if len(count) < 4:
+            sigma[i] = default_sigma
+            continue
+        
+        if ((eff_N > 0) & (eff_N < len(foo)-3)):
+            N = np.copy(eff_N)
+        else:
+            N = len(foo)-3
+
+           
+                
+
+        A = np.ones((len(foo),3))
+        A[:,0] = np.sin(np.deg2rad(az[foo]))*np.cos(np.deg2rad(el[foo]))
+        A[:,1] = np.cos(np.deg2rad(az[foo]))*np.cos(np.deg2rad(el[foo]))
+        A[:,2] = np.sin(np.deg2rad(el[foo]))
+        
+        
+        # Solve for the wind components
+        v0 = (np.linalg.pinv(A.T.dot(A))).dot(A.T).dot(vr[foo,i])
+        
+        #sigma[i] = np.sqrt(np.nansum((vr[foo,i] - A.dot(v0))**2)/(len(foo)-3))
+        
+        sigma[i] = np.sqrt(np.nansum((vr[foo,i] - A.dot(v0))**2)/N)
+        thresh_sigma[i] = np.sqrt(np.nansum((vr[foo,i] - A.dot(v0))**2)/(len(foo) - 3))
+
+        # We are going to try this QC. If there is a significant w component
+        # determine the uncertainty with no w component
+        
+        if np.abs(v0[2]) >= 3:
+            vh_0 = (np.linalg.pinv(A[:,:-1].T.dot(A[:,:-1]))).dot(A[:,:-1].T).dot(vr[foo,i])
+            
+            temp_sigma = np.sqrt(np.nansum((vr[foo,i] - A[:,:-1].dot(vh_0))**2))/(N+1)
+            temp_thresh_sigma = np.sqrt(np.nansum((vr[foo,i] - A[:,:-1].dot(vh_0))**2))/((len(foo) - 3) + 1)
+            
+            if temp_sigma > sigma[i]:
+                sigma[i] = np.copy(temp_sigma)
+                thresh_sigma[i] = np.copy(temp_thresh_sigma)
+ 
+        # Average rv for unique azimuth angles
+        # I only consider full azimuth angles
+        # do not do this when elevation angle is not unique
+        for i_az in range(len(azu)):
+            idx = np.where(np.round(az[foo]) == azu[i_az])[0]
+            vrzz[i_az,i] = np.mean(vr[foo,i][idx])
+    sigma[thresh_sigma > sig_thresh] = default_sigma
+    
+    return sigma, thresh_sigma, vrzz, elu, azu
+
 
 def consensus_average(x, width, cutoff, min_percentage,missing=-999.):
     

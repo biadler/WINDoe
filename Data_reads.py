@@ -4,7 +4,6 @@ from scipy import interpolate
 from netCDF4 import Dataset
 import calendar
 from datetime import datetime, timedelta, timezone
-import numpy.ma as ma
 
 
 import VIP_Databases_functions
@@ -514,16 +513,27 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
 
                     # Now interpolate to the heights of the retrieval
                     vrzz = np.ones((len(elxx), len(retz)))*-999
-                    vr_varzz = np.ones((len(elxx), len(retz)))*-999
 
                     for ii in range(len(elxx)):
                         hgt = rngxx*np.sin(np.deg2rad(elxx[ii]))
                         vrzz[ii, :] = np.interp(
                             retz, hgt, vrxx[ii, :], left=-999, right=-999)
-
-                    temp_sig, thresh_sig = Other_functions.wind_estimate(
-                        vrzz, elxx, azxx, retz,vip['raw_lidar_eff_N'], vip['raw_lidar_sig_thresh'])
                     
+                    #average radial velocity to reduce number of samples from scanning lidar
+                    if vip['raw_lidar_average_rv'][k] == 1:
+                        temp_sig, thresh_sig, temp_vrzz, temp_elxx, temp_azxx = Other_functions.wind_estimate_average(
+                            vrzz, elxx, azxx, retz,vip['raw_lidar_eff_N'], vip['raw_lidar_sig_thresh'])
+                        # use new shorter values for vr, el, az
+                        elxx = temp_elxx
+                        azxx = temp_azxx
+                        vrzz = temp_vrzz
+                        vr_varzz = np.ones((len(elxx), len(retz)))*-999
+                    else:
+                        temp_sig, thresh_sig = Other_functions.wind_estimate(
+                            vrzz, elxx, azxx, retz,vip['raw_lidar_eff_N'], vip['raw_lidar_sig_thresh'])
+
+
+
                     vr_varzz[:, :] = temp_sig[None, :]
 
                     foo = np.where(vr_varzz > 90000)
@@ -881,7 +891,7 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
             el.append(np.copy(elxx.ravel()))
             vr.append(np.copy(vrxx))
             vr_var.append(np.copy(vr_varxx))
-    
+
     # Build the output dictionary and return it
     raw_lidar = {'success': 1, 'time': lsecs, 'range': rng, 'z': retz, 'azimuth': az, 'elevation': el,
                  'vr': vr, 'vr_var': vr_var, 'valid': available}
@@ -1363,6 +1373,7 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
             else:
                 for i in range(len(files)):
                     fid = Dataset(files[i], 'r')
+
                     fsecs = fid.variables['time'][:]
 
                     foo = np.where((fsecs >= rtime-((vip['proc_lidar_timedelta'][k]/2.)*60)) &
@@ -1385,6 +1396,21 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                     v_err = fid.variables['dv'][foo, :] + fid.variables['spectral_broadening'][foo,:]
 
                     fid.close()
+
+                    # remove mask, because it messes up vstack
+                    ux = ux.data
+                    vx = vx.data
+                    u_err = u_err.data
+                    v_err = v_err.data
+                    
+                    # replace 9999 with -999
+                    ux[ux == 9999] = -999
+                    vx[vx == 9999] = -999
+                    u_err[u_err == 9999] = -999
+                    v_err[v_err == 9999] = -999
+
+
+                    
                     if no_data:
                         lsecsx = fsecs[foo]
                         zxx = np.copy(np.array([zx]*len(fsecs[foo])))
@@ -1401,7 +1427,6 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                         vxx = np.vstack((vxx, vx))
                         u_errx = np.vstack((u_errx, u_err))
                         v_errx = np.vstack((v_errx, v_err))
-
                 if not no_data:
                     zxx = zxx.T
                     uxx = uxx.T
@@ -1455,7 +1480,27 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                     v_interp = None
                     uerr_interp = None
                     verr_interp = None
-                
+            
+            if vip['proc_lidar_average_uv'][k] == 1:
+                # average over time so that one value per profile is used
+                # first replace -999 with nan
+                u_interp[u_interp == -999.] = np.nan
+                v_interp[v_interp == -999.] = np.nan
+                uerr_interp[uerr_interp == -999.] = np.nan
+                verr_interp[verr_interp == -999.] = np.nan
+                uerr_interp = np.atleast_2d(np.mean(uerr_interp,axis=1)+np.std(u_interp,axis=1)).T
+                verr_interp = np.atleast_2d(np.mean(verr_interp,axis=1)+np.std(v_interp,axis=1)).T
+                u_interp = np.atleast_2d(np.mean(u_interp,axis=1)).T
+                v_interp = np.atleast_2d(np.mean(v_interp,axis=1)).T
+                # replace nan with nan
+                u_interp[np.isnan(u_interp)] = -999.
+                v_interp[np.isnan(v_interp)] = -999.
+                uerr_interp[np.isnan(uerr_interp)] = -999.
+                verr_interp[np.isnan(verr_interp)] = -999.
+                lsecsx = np.atleast_1d(rtime)
+
+
+
 
         lsecs.append(lsecsx)
         u.append(u_interp)
@@ -1661,11 +1706,6 @@ def read_prof_cons(date, retz, rtime, vip, verbose):
                     wspd = fid.variables['wind_speed'][foo, mode, hidx]
                     wdir = fid.variables['wind_direction'][foo, mode, hidx]
 
-                    # apply quality flag, 0 and 2 are good
-                    qcflag = fid.variables['wind_quality'][foo,mode,hidx]
-                    wspd[qcflag >2]=ma.masked
-                    wdir[qcflag >2]=ma.masked
-
                     fid.close()
 
                     ux = -wspd * np.sin(np.deg2rad(wdir))
@@ -1798,12 +1838,7 @@ def read_prof_cons(date, retz, rtime, vip, verbose):
                     zx = zx[hidx]
                     wspd = fid.variables['wind_speed'][foo, mode, hidx]
                     wdir = fid.variables['wind_direction'][foo, mode, hidx]
-                    
-                    # apply quality flag, 0 and 2 are good  
-                    qcflag = fid.variables['wind_quality'][foo,mode,hidx]
-                    wspd[qcflag >2]=ma.masked
-                    wdir[qcflag >2]=ma.masked
-                    
+
                     fid.close()
 
                     ux = -wspd * np.sin(np.deg2rad(wdir))
@@ -2289,9 +2324,9 @@ def read_insitu(date, retz, rtime, vip, verbose):
                         verr_interp = 1.0
 
                     # This is all 10-m data
-                    #z_interp = np.array([retz[0]])
+                    z_interp = np.array([retz[0]])
                     #lowest retz is usually 0 m, set manually to 10 m
-                    z_interp = np.array([0.010])
+                    #z_interp = np.array([0.010])
 
                     u_interp = np.array([u_interp])
                     v_interp = np.array([v_interp])

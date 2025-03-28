@@ -276,7 +276,7 @@ for i in range(len(rtime)):
         
     # Read in the data
     fail, raw_lidar, proc_lidar, prof_cons, prof_raw, insitu, model, copter, windoe = Data_reads.read_all_data(date, z, rtime[i], vip, verbose)
-     
+    
     # Set iterate once to false here
     iterate_once = False
     
@@ -360,6 +360,10 @@ for i in range(len(rtime)):
     flagY = []
     azY = []
     elY = []
+    Yall = []
+    sigYall = []
+    dimYall = []
+    flagYall = []
 
     if raw_lidar['success'] > 0:
         for j in range(vip['raw_lidar_number']):
@@ -379,6 +383,11 @@ for i in range(len(rtime)):
                 azY.extend((raw_lidar['azimuth'][j][foo[1]]).ravel())
                 elY.extend((raw_lidar['elevation'][j][foo[1]]).ravel())
   
+                Yall.extend(raw_lidar['vr'][j].ravel())
+                sigYall.extend(raw_lidar['vr_var'][j].ravel())
+                flagYall.extend(np.ones(len(raw_lidar['vr'][j].ravel())))
+                dimYall.extend(raw_lidar['z'].ravel())
+                
     if proc_lidar['success'] > 0:
         for j in range(vip['proc_lidar_number']):
             if proc_lidar['valid'][j] == 1:
@@ -399,6 +408,11 @@ for i in range(len(rtime)):
                 azY.extend(np.ones(len(proc_lidar['u'][j][foo])).ravel()*-999)
                 elY.extend(np.ones(len(proc_lidar['u'][j][foo])).ravel()*-999)
  
+                Yall.extend(proc_lidar['u'][j].ravel())
+                sigYall.extend(proc_lidar['u_error'][j].ravel())
+                flagYall.extend(np.ones(len(proc_lidar['u'][j].ravel()))*2)
+                dimYall.extend(proc_lidar['height'])
+                
         for j in range(vip['proc_lidar_number']):
             if proc_lidar['valid'][j] == 1:
             
@@ -417,7 +431,12 @@ for i in range(len(rtime)):
                 dimY.extend(proc_lidar['height'][foo[0]])
                 azY.extend(np.ones(len(proc_lidar['v'][j][foo])).ravel()*-999)
                 elY.extend(np.ones(len(proc_lidar['v'][j][foo])).ravel()*-999)
-   
+    
+                Yall.extend(proc_lidar['v'][j].ravel())
+                sigYall.extend(proc_lidar['v_error'][j].ravel())
+                flagYall.extend(np.ones(len(proc_lidar['v'][j].ravel()))*3)
+                dimYall.extend(proc_lidar['height'])
+
     if prof_cons['success'] > 0:
         for j in range(vip['cons_profiler_number']):
             if prof_cons['valid'][j] == 1:
@@ -437,6 +456,11 @@ for i in range(len(rtime)):
                 azY.extend(np.ones(len(prof_cons['u'][j][foo])).ravel()*-999)
                 elY.extend(np.ones(len(prof_cons['u'][j][foo])).ravel()*-999)
 
+                Yall.extend(prof_cons['u'][j].ravel())
+                sigYall.extend(prof_cons['u_error'][j].ravel())
+                flagYall.extend(np.ones(len(prof_cons['u'][j].ravel()))*4)
+                dimYall.extend(prof_cons['height'])
+ 
         for j in range(vip['cons_profiler_number']):
             if prof_cons['valid'][j] == 1:
                 foo = np.where((prof_cons['u'][j] >= -500) & (prof_cons['u_error'][j] >= -500) &
@@ -455,6 +479,11 @@ for i in range(len(rtime)):
                 azY.extend(np.ones(len(prof_cons['v'][j][foo])).ravel()*-999)
                 elY.extend(np.ones(len(prof_cons['v'][j][foo])).ravel()*-999)
     
+                Yall.extend(prof_cons['v'][j].ravel())
+                sigYall.extend(prof_cons['v_error'][j].ravel())
+                flagYall.extend(np.ones(len(prof_cons['v'][j].ravel()))*5)
+                dimYall.extend(prof_cons['height'])
+
     if insitu['success'] > 0:
         for j in range(vip['insitu_number']):
             if insitu['valid'][j] == 1:
@@ -475,6 +504,11 @@ for i in range(len(rtime)):
                 azY.extend(np.ones(len(insitu['u'][j][foo])).ravel()*-999)
                 elY.extend(np.ones(len(insitu['u'][j][foo])).ravel()*-999)
 
+                Yall.extend(insitu['u'][j].ravel())
+                sigYall.extend(insitu['u_error'][j].ravel())
+                flagYall.extend(np.ones(len(insitu['u'][j].ravel()))*6)
+                dimYall.extend(insitu['height'][j].ravel())
+                
         for j in range(vip['insitu_number']):
             if insitu['valid'][j] == 1:
             
@@ -493,6 +527,11 @@ for i in range(len(rtime)):
                 dimY.extend(insitu['height'][j][foo].ravel())
                 azY.extend(np.ones(len(insitu['v'][j][foo])).ravel()*-999)
                 elY.extend(np.ones(len(insitu['v'][j][foo])).ravel()*-999)
+
+                Yall.extend(insitu['v'][j].ravel())
+                sigYall.extend(insitu['v_error'][j].ravel())
+                flagYall.extend(np.ones(len(insitu['v'][j].ravel()))*7)
+                dimYall.extend(insitu['height'][j].ravel())
 
     if model['success'] > 0:
         if model['valid'] == 1:
@@ -625,7 +664,11 @@ for i in range(len(rtime)):
     azY = np.array(azY)
     elY = np.array(elY)
 
-     
+    Yalll = np.array(Y)
+    sigYall = np.array(sigY)
+    flagYall = np.array(flagY)
+    dimYall = np.array(dimY)
+ 
     zmin = np.nanmin(dimY)
     zmax = np.nanmax(dimY)
     
@@ -1168,9 +1211,9 @@ for i in range(len(rtime)):
         # prevent overfitting
         # TODO: Make noise floor part of namelist
         Sy = np.array(Sy)
-        foo = np.where((flagY <= 12) & (Sy<1))
+        #foo = np.where((flagY <= 12) & (Sy<1))
         #I also do not want it for cons_profiler
-        #foo = np.where((flagY <= 12) & (flagY != 4) & (flagY !=5) &  (Sy<1))
+        foo = np.where((flagY <= 12) & (flagY != 4) & (flagY !=5) &  (Sy<1))
         Sy[foo] = 1
         sigY[foo] = 1
         
@@ -1390,6 +1433,12 @@ for i in range(len(rtime)):
         xsamp[-1]['qcflag'] = 0
     
     dindices = Other_functions.compute_dindices(xsamp[-1],vip)
+
+    # Add observation vector information to output dict
+    xsamp[-1]['Yall']=np.copy(Yall)
+    xsamp[-1]['sigYall']=np.copy(sigYall)
+    xsamp[-1]['dimYall']=np.copy(dimYall)
+    xsamp[-1]['flagYall']=np.copy(flagYall)
 
     # Write the data into the netCDF file
     success, noutfilename = Output_Functions.write_output(vip, globatt, xsamp[-1], dindices, prior, fsample, (endtime-starttime).total_seconds(),

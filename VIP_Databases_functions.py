@@ -67,6 +67,7 @@ def read_vip_file(filename,globatt,verbose):
             'raw_lidar_timedelta':[5],        # Length of window [min] for lidar data to be include in each retrieval time (e.g. 5 means all data within 5 minutes of retrieval time will be used)
             'raw_lidar_fix_csm_azimuths':[0],          # Fix the azimuths of the lidar scans
             'raw_lidar_fix_heading':[0],     # Use the heading in the lidar file to add to the azimuths
+            'raw_lidar_average_rv':[0],     # Average all radial velocities at full azimuth angles, this allows to reduce the sample size, 0: do not average, 1: average
             'raw_lidar_eff_N':-1,            # The effective number samples to use when calculating the lidar error. -1 means use actual N
             'raw_lidar_sig_thresh': 10,       # sigma value to filter noise from windoe estimate
             
@@ -77,6 +78,8 @@ def read_vip_file(filename,globatt,verbose):
             'proc_lidar_maxalt':[2],         # Maximum altitude [km] to use lidar data. Length of list should be same as proc_lidar_number
             'proc_lidar_altitude':[0],       # Altitude of the lidar [m msl]
             'proc_lidar_timedelta':[5],      # Length of window [min] for lidar data to be include in each retrieval time (e.g. 5 means all data within 5 minutes of retrieval time will be used)
+            'proc_lidar_average_uv':[0],    # Average u,v compontens over time, this allows to reduce the sample size, 0: do not average, 1: average
+
             
             'cons_profiler_number':0,        # Number of profiler data sources used in the retrieval
             'cons_profiler_type':[0],       # Type of wind profiler. 0-None, 1-NCAR 449Mhz profiler
@@ -181,6 +184,7 @@ def read_vip_file(filename,globatt,verbose):
                         (key == 'raw_lidar_timedelta') or
                         (key == 'raw_lidar_fix_csm_azimuths') or
                         (key == 'raw_lidar_fix_heading') or
+                        (key == 'raw_lidar_average_rv') or
                         #(key == 'raw_lidar_sig_thresh') or
                         (key == 'proc_lidar_type') or
                         (key == 'proc_lidar_paths') or
@@ -188,6 +192,7 @@ def read_vip_file(filename,globatt,verbose):
                         (key == 'proc_lidar_maxalt') or
                         (key == 'proc_lidar_altitude') or
                         (key == 'proc_lidar_timedelta') or
+                        (key == 'proc_lidar_average_uv') or
                         (key == 'cons_profiler_type') or
                         (key == 'cons_profiler_paths') or
                         (key == 'cons_profiler_minalt') or

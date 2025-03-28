@@ -426,8 +426,13 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
         cov = fid.variables['cov']
         cov[fsample,:,:] = xret['Sop'][:2*nht,:2*nht]
 
-        #save observation vector and unertainty, for everything but raw lidar data
-        obsvecidx = np.where(xret['flagY']>1)[0]
+        if all(vip['raw_lidar_average_rv']) == 1:
+            # for all obs
+            obsvecidx = np.where(xret['flagY']>0)[0]
+        else:
+           #save observation vector and unertainty, for everything but raw lidar data
+            obsvecidx = np.where(xret['flagY']>1)[0]
+
         if len(obsvecidx)>0:
             obs_vector = fid.variables['obs_vector']
             obs_vector[fsample,:] = xret['Y'][obsvecidx]
