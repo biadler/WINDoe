@@ -162,7 +162,22 @@ def wind_estimate_average(vr,el,az,ranges,eff_N,sig_thresh = 9,default_sigma=100
     azu = np.unique(np.round(az))
     vrzz = np.ones((len(azu),len(ranges)))*np.nan
     if len(np.unique(np.round(el))) > 1:
-        print('Elevation angles are not uniform, averaging radial velocities should not be done!')
+        print('Elevation angles are not uniform, determine elevation angle that occurs most often and use this')
+        elu = np.unique(np.round(el))
+        felu = []
+        fel = []
+        for el_ in elu:
+            idx = np.where(np.round(el) == el_)[0]
+            felu.append(len(idx))
+            fel.append(idx)
+        idx = np.argmax(felu)
+        elu = np.ones(len(azu))*elu[idx]
+        idx = fel[idx]
+        # only keep data at unique elevaiton angle
+        el = el[idx]
+        az = az[idx]
+        vr = vr[idx,:]
+
     else:
         elu = np.ones(len(azu))*np.unique(np.round(el))
     # Loop over all the ranges

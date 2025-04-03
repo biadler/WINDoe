@@ -1201,6 +1201,7 @@ for i in range(len(rtime)):
             Sop = Binv.dot(gfac*gfac*SaInv + Kij.T.dot(SmInv).dot(Kij)).dot(Binv)
             SopInv = scipy.linalg.inv(Sop)
             Akern = Binv.dot(Kij.T).dot(SmInv).dot(Kij)
+        
         # Look for NaN values in the updated state vector. They should not exist,
         # but if they do, then let's stop the code
         foo = np.where(np.isnan(Xnp1))[0]

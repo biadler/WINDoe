@@ -68,7 +68,7 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                     files = files + \
                         sorted(
                             glob.glob(vip['raw_lidar_paths'][k] + '/' + '*' + dates[i] + '*.' + cdf[j]))
-
+        
             if len(files) == 0:
                 if verbose >= 1:
                     print(
@@ -1360,7 +1360,6 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                     files = files + \
                         sorted(glob.glob(
                             vip['proc_lidar_paths'][k] + '/' + '*lidar*' + dates[i] + '*sta.' + cdf[j]))
-
             if len(files) == 0:
                 if verbose >= 1:
                     print(
@@ -1481,7 +1480,7 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                     uerr_interp = None
                     verr_interp = None
             
-            if vip['proc_lidar_average_uv'][k] == 1:
+            if not u_interp == None and vip['proc_lidar_average_uv'][k] == 1:
                 # average over time so that one value per profile is used
                 # first replace -999 with nan
                 u_interp[u_interp == -999.] = np.nan
@@ -1499,6 +1498,160 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                 verr_interp[np.isnan(verr_interp)] = -999.
                 lsecsx = np.atleast_1d(rtime)
 
+        # Read in Windcube V2.1 file deployed for WFIP3
+        # For the error we are going to the  mean spectral broadening for 10 min period  
+        elif vip['proc_lidar_type'][k] == 5:
+            if verbose >= 1:
+                print('Reading in processed Windcube V1 file')
+
+            dates = [(datetime.strptime(str(date), '%Y%m%d') - timedelta(days=1)).strftime('%Y%m%d'),
+                     str(date),  (datetime.strptime(str(date), '%Y%m%d') + timedelta(days=1)).strftime('%Y%m%d')]
+
+            files = []
+            for i in range(len(dates)):
+                for j in range(len(cdf)):
+                    files = files + \
+                        sorted(glob.glob(
+                            vip['proc_lidar_paths'][k] + '/' + '*lidar*' + dates[i] + '*sta.' + cdf[j]))
+            if len(files) == 0:
+                if verbose >= 1:
+                    print(
+                        'No Windcube V2.1 files found in this directory for this date')
+                lsecsx = None
+                u_interp = None
+                v_interp = None
+                uerr_interp = None
+                verr_interp = None
+            else:
+                for i in range(len(files)):
+                    fid = Dataset(files[i], 'r')
+
+                    fsecs = fid.variables['time'][:]
+
+                    foo = np.where((fsecs >= rtime-((vip['proc_lidar_timedelta'][k]/2.)*60)) &
+                                   (fsecs < rtime+((vip['proc_lidar_timedelta'][k]/2.)*60)))[0]
+                    
+                    # There are no times we want here so just move on
+                    if len(foo) == 0:
+                        fid.close()
+                        continue
+
+                    zx = fid.variables['height'][:]/1000
+                    ux = -fid.variables['wind_speed'][foo,:]*np.sin(fid.variables['wind_direction'][foo,:]*np.pi/180.)
+                    vx = -fid.variables['wind_speed'][foo,:]*np.cos(fid.variables['wind_direction'][foo,:]*np.pi/180.)
+                    u_err = fid.variables['doppler_spectral_broadening'][foo,:]
+                    v_err = fid.variables['doppler_spectral_broadening'][foo,:]
+                    fid.close()
+
+                   # # remove mask, because it messes up vstack
+                   # ux = ux.data
+                   # vx = vx.data
+                   # u_err = u_err.data
+                   # v_err = v_err.data
+                    
+                   # # replace 9999 with -999
+                   # ux[ux == -9999] = -999
+                   # vx[vx == -9999] = -999
+                   # u_err[u_err == -9999] = -999
+                   # v_err[v_err == -9999] = -999
+
+                    # create normal array with nan
+                    ux = ux.filled(np.nan)
+                    vx = vx.filled(np.nan)
+                    u_err = u_err.filled(np.nan)
+                    v_err = v_err.filled(np.nan)
+
+
+
+                    
+                    if no_data:
+                        lsecsx = fsecs[foo]
+                        zxx = np.copy(np.array([zx]*len(fsecs[foo])))
+                        uxx = np.copy(ux)
+                        vxx = np.copy(vx)
+                        u_errx = np.copy(u_err)
+                        v_errx = np.copy(v_err)
+                        no_data = False
+
+                    else:
+                        lsecsx = np.append(lsecsx, fsecs[foo])
+                        zxx = np.vstack((zxx, np.array([zx]*len(fsecs[foo]))))
+                        uxx = np.vstack((uxx, ux))
+                        vxx = np.vstack((vxx, vx))
+                        u_errx = np.vstack((u_errx, u_err))
+                        v_errx = np.vstack((v_errx, v_err))
+                if not no_data:
+                    zxx = zxx.T
+                    uxx = uxx.T
+                    vxx = vxx.T
+                    u_errx = u_errx.T
+                    v_errx = v_errx.T
+
+                    # Interpolate the data to the retrieval vertical grid
+                    f = interpolate.interp1d(
+                        zxx[:, 0], uxx, axis=0, bounds_error=False, fill_value=-999)
+                    u_interp = f(retz.data)
+
+                    f = interpolate.interp1d(
+                        zxx[:, 0], vxx, axis=0, bounds_error=False, fill_value=-999)
+                    v_interp = f(retz.data)
+
+                    f = interpolate.interp1d(
+                        zxx[:, 0], u_errx, axis=0, bounds_error=False, fill_value=-999)
+                    uerr_interp = f(retz.data)
+
+                    f = interpolate.interp1d(
+                        zxx[:, 0], v_errx, axis=0, bounds_error=False, fill_value=-999)
+                    verr_interp = f(retz.data)
+
+                    # Get rid of NaN values
+                    foo = np.where(np.isnan(u_interp))
+
+                    u_interp[foo] = -999.
+                    v_interp[foo] = -999.
+                    uerr_interp[foo] = -999.
+                    verr_interp[foo] = -999.
+
+                    # We only want to use data between min range and max range so set
+                    # everything else to missing
+                    foo = np.where((retz < vip['proc_lidar_minalt'][k]) |
+                                   (retz > vip['proc_lidar_maxalt'][k]))
+
+                    u_interp[foo] = -999.
+                    v_interp[foo] = -999.
+                    uerr_interp[foo] = -999.
+                    verr_interp[foo] = -999.
+
+                    foo = np.where(u_interp != -999.)[0]
+                    if len(foo) > 0:
+                        available[k] = 1
+
+                    if vip['proc_lidar_average_uv'][k] == 1:
+                        # average over time so that one value per profile is used
+                        # first replace -999 with nan
+                        u_interp[u_interp == -999.] = np.nan
+                        v_interp[v_interp == -999.] = np.nan
+                        uerr_interp[uerr_interp == -999.] = np.nan
+                        verr_interp[verr_interp == -999.] = np.nan
+                        uerr_interp = np.atleast_2d(np.mean(uerr_interp,axis=1)+np.std(u_interp,axis=1)).T
+                        verr_interp = np.atleast_2d(np.mean(verr_interp,axis=1)+np.std(v_interp,axis=1)).T
+                        u_interp = np.atleast_2d(np.mean(u_interp,axis=1)).T
+                        v_interp = np.atleast_2d(np.mean(v_interp,axis=1)).T
+                        # replace nan with nan
+                        u_interp[np.isnan(u_interp)] = -999.
+                        v_interp[np.isnan(v_interp)] = -999.
+                        uerr_interp[np.isnan(uerr_interp)] = -999.
+                        verr_interp[np.isnan(verr_interp)] = -999.
+                        lsecsx = np.atleast_1d(rtime)
+
+
+                else:
+                    print('No Windcube V2.1 data for retrieval at this time')
+                    lsecsx = None
+                    u_interp = None
+                    v_interp = None
+                    uerr_interp = None
+                    verr_interp = None
 
 
 
@@ -2887,7 +3040,7 @@ def read_insitu(date, retz, rtime, vip, verbose):
         # the random error into the time-series...
         
 
-        if len(u_interp) > 0 and vip['insitu_type'][k]<3:
+        if not u_interp == None and len(u_interp) > 0 and vip['insitu_type'][k]<3:
             print('replicate insitu surface value')
             vip['insitu_type'][k]
             u1 = np.zeros((int(vip['insitu_npts'][k]),len(u_interp)))

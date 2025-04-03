@@ -318,9 +318,9 @@ def check_vip(vip):
         print('Error: lidar_type can only be set to 0, 1, 2, 3, or 4')
         flag = 1
     
-    foo = np.where((np.array(vip['proc_lidar_type']) < 0) | (np.array(vip['proc_lidar_type']) > 4))[0]
+    foo = np.where((np.array(vip['proc_lidar_type']) < 0) | (np.array(vip['proc_lidar_type']) > 5))[0]
     if len(foo) > 0:
-        print('Error: lidar_type can only be set to 0, 1, 2, 3, 4')
+        print('Error: lidar_type can only be set to 0, 1, 2, 3, 4, 5')
         flag = 1
     
     foo = np.where((np.array(vip['cons_profiler_type']) < 0) | (np.array(vip['cons_profiler_type']) > 4))[0]
