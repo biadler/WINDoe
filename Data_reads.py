@@ -533,7 +533,6 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                             vrzz, elxx, azxx, retz,vip['raw_lidar_eff_N'], vip['raw_lidar_sig_thresh'])
 
 
-
                     vr_varzz[:, :] = temp_sig[None, :]
 
                     foo = np.where(vr_varzz > 90000)
@@ -1471,6 +1470,24 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                     foo = np.where(u_interp != -999.)[0]
                     if len(foo) > 0:
                         available[k] = 1
+                    
+                    if vip['proc_lidar_average_uv'][k] == 1:
+                        # average over time so that one value per profile is used
+                        # first replace -999 with nan
+                        u_interp[u_interp == -999.] = np.nan
+                        v_interp[v_interp == -999.] = np.nan
+                        uerr_interp[uerr_interp == -999.] = np.nan
+                        verr_interp[verr_interp == -999.] = np.nan
+                        uerr_interp = np.atleast_2d(np.mean(uerr_interp,axis=1)+np.std(u_interp,axis=1)).T
+                        verr_interp = np.atleast_2d(np.mean(verr_interp,axis=1)+np.std(v_interp,axis=1)).T
+                        u_interp = np.atleast_2d(np.mean(u_interp,axis=1)).T
+                        v_interp = np.atleast_2d(np.mean(v_interp,axis=1)).T
+                        # replace nan with nan
+                        u_interp[np.isnan(u_interp)] = -999.
+                        v_interp[np.isnan(v_interp)] = -999.
+                        uerr_interp[np.isnan(uerr_interp)] = -999.
+                        verr_interp[np.isnan(verr_interp)] = -999.
+                        lsecsx = np.atleast_1d(rtime)
 
                 else:
                     print('No Windcube V1 data for retrieval at this time')
@@ -1480,24 +1497,7 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                     uerr_interp = None
                     verr_interp = None
             
-            if not u_interp == None and vip['proc_lidar_average_uv'][k] == 1:
-                # average over time so that one value per profile is used
-                # first replace -999 with nan
-                u_interp[u_interp == -999.] = np.nan
-                v_interp[v_interp == -999.] = np.nan
-                uerr_interp[uerr_interp == -999.] = np.nan
-                verr_interp[verr_interp == -999.] = np.nan
-                uerr_interp = np.atleast_2d(np.mean(uerr_interp,axis=1)+np.std(u_interp,axis=1)).T
-                verr_interp = np.atleast_2d(np.mean(verr_interp,axis=1)+np.std(v_interp,axis=1)).T
-                u_interp = np.atleast_2d(np.mean(u_interp,axis=1)).T
-                v_interp = np.atleast_2d(np.mean(v_interp,axis=1)).T
-                # replace nan with nan
-                u_interp[np.isnan(u_interp)] = -999.
-                v_interp[np.isnan(v_interp)] = -999.
-                uerr_interp[np.isnan(uerr_interp)] = -999.
-                verr_interp[np.isnan(verr_interp)] = -999.
-                lsecsx = np.atleast_1d(rtime)
-
+            
         # Read in Windcube V2.1 file deployed for WFIP3
         # For the error we are going to the  mean spectral broadening for 10 min period  
         elif vip['proc_lidar_type'][k] == 5:
@@ -2477,9 +2477,9 @@ def read_insitu(date, retz, rtime, vip, verbose):
                         verr_interp = 1.0
 
                     # This is all 10-m data
-                    z_interp = np.array([retz[0]])
+                    # z_interp = np.array([retz[0]])
                     #lowest retz is usually 0 m, set manually to 10 m
-                    #z_interp = np.array([0.010])
+                    z_interp = np.array([vip['insitu_station_height'][k]/1000])
 
                     u_interp = np.array([u_interp])
                     v_interp = np.array([v_interp])
@@ -3039,9 +3039,8 @@ def read_insitu(date, retz, rtime, vip, verbose):
         # of the replicates the same as the original, so I will insert 1/10th of
         # the random error into the time-series...
         
-
         if not u_interp == None and len(u_interp) > 0 and vip['insitu_type'][k]<3:
-            print('replicate insitu surface value')
+            print('replicate insitu surface value '+str(vip['insitu_npts'][k])+ ' times')
             vip['insitu_type'][k]
             u1 = np.zeros((int(vip['insitu_npts'][k]),len(u_interp)))
             su1 = np.zeros((int(vip['insitu_npts'][k]),len(u_interp)))
@@ -3061,7 +3060,6 @@ def read_insitu(date, retz, rtime, vip, verbose):
             v_interp=v1
             verr_interp=sv1
             z_interp=np.full(u_interp.shape,z_interp)
-
 
 
 

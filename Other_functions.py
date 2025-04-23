@@ -173,6 +173,7 @@ def wind_estimate_average(vr,el,az,ranges,eff_N,sig_thresh = 9,default_sigma=100
         idx = np.argmax(felu)
         elu = np.ones(len(azu))*elu[idx]
         idx = fel[idx]
+        print('most common unique elevation angle is '+str(elu))
         # only keep data at unique elevaiton angle
         el = el[idx]
         az = az[idx]

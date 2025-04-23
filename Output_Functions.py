@@ -239,7 +239,9 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
 
             
             # save observation vector, etc, if it is not lidar raw data
-            obsvecidx = np.where(xret['flagY']>1)[0]
+            # obsvecidx = np.where(xret['flagY']>1)[0]
+            # save observation vector for all data, can get very large if not averaged
+            obsvecidx = np.where(xret['flagY']>0)[0]
             if len(obsvecidx)>0:
                 obs_dim = fid.createDimension('obs_dim',None)
                 #obs_dim = fid.createDimension('obs_dim',len(obsvecidx))
@@ -432,6 +434,8 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
         else:
            #save observation vector and unertainty, for everything but raw lidar data
             obsvecidx = np.where(xret['flagY']>1)[0]
+            # save observation vector for all data, can get very large if not averaged
+            obsvecidx = np.where(xret['flagY']>0)[0]
 
         if len(obsvecidx)>0:
             obs_vector = fid.variables['obs_vector']
