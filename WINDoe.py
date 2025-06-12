@@ -423,7 +423,7 @@ for i in range(len(rtime)):
             if prof_cons['valid'][j] == 1:
                 foo = np.where((prof_cons['u'][j] >= -500) & (prof_cons['u_error'][j] >= -500) &
                                (prof_cons['v'][j] >= -500) & (prof_cons['v_error'][j] >= -500))
-            
+                
                 if len(foo[0]) == 0:
                     print('Major error when adding consensus wind profiler data to observation vector. This should not happen!')
                     VIP_Databases_functions.abort(date)
@@ -625,7 +625,12 @@ for i in range(len(rtime)):
     azY = np.array(azY)
     elY = np.array(elY)
 
-     
+    
+    # Check to make sure that any observations are available
+    if len(dimY) == 0:
+        print('No observations available for the retrieval. Skipping sample')
+        continue
+
     zmin = np.nanmin(dimY)
     zmax = np.nanmax(dimY)
     
