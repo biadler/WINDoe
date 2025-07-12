@@ -171,16 +171,27 @@ def wind_estimate_average(vr,el,az,ranges,eff_N,sig_thresh = 9,default_sigma=100
             felu.append(len(idx))
             fel.append(idx)
         idx = np.argmax(felu)
+        print('most common unique elevation angle is '+str(elu[idx]))
+        if elu[idx]<5 or elu[idx]>175:
+            print('I do not want to use an elevation angle of less than 5 or more than 175')
+            # set all vr to missing
+            vr[:,:] = -999
+            
         elu = np.ones(len(azu))*elu[idx]
         idx = fel[idx]
-        print('most common unique elevation angle is '+str(elu))
         # only keep data at unique elevaiton angle
         el = el[idx]
         az = az[idx]
         vr = vr[idx,:]
 
     else:
+        print('elevation angle is '+str(np.unique(el)))
         elu = np.ones(len(azu))*np.unique(np.round(el))
+        if np.unique(el)<5 or np.unique(el)>175:
+            print('I do not want to use an elevation angle of less than 5 or more than 175')
+            # set all vr to missing
+            vr[:,:] = -999
+
     # Loop over all the ranges
     for i in range(len(ranges)):
 
