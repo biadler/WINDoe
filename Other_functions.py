@@ -4,6 +4,7 @@ import scipy.io
 import scipy.interpolate
 from datetime import datetime
 from netCDF4 import Dataset
+import matplotlib.pyplot as plt
 
 ###############################################################################
 # This file contains the following functions:
@@ -159,7 +160,17 @@ def wind_estimate_average(vr,el,az,ranges,eff_N,sig_thresh = 9,default_sigma=100
     
     coords = az + 1j*el
     #unique azimuth angles, this is used for averaging vr later
-    azu = np.unique(np.round(az))
+    #consider bins of 1 degree
+    hist,bin_edges = np.histogram(az,np.arange(-0.5,360.5,1))
+    if len(np.where(hist==1)[0])>1:
+        print('search for unique azimuth angles within 1 deg bins')
+        idx = np.where(hist>1)
+        azu = bin_edges[idx]+0.5 #unique azimuth angles centered
+        centeredazi = 1
+    else:
+        #only works when acquisition only happens at distinct azimuth angles
+        azu = np.unique(np.round(az))
+        centeredazi = 0
     vrzz = np.ones((len(azu),len(ranges)))*np.nan
     if len(np.unique(np.round(el))) > 1:
         print('Elevation angles are not uniform, determine elevation angle that occurs most often and use this')
@@ -185,9 +196,9 @@ def wind_estimate_average(vr,el,az,ranges,eff_N,sig_thresh = 9,default_sigma=100
         vr = vr[idx,:]
 
     else:
-        print('elevation angle is '+str(np.unique(el)))
+        print('elevation angle is '+str(np.unique(np.round(el))))
         elu = np.ones(len(azu))*np.unique(np.round(el))
-        if np.unique(el)<5 or np.unique(el)>175:
+        if np.unique(np.round(el))<5 or np.unique(np.round(el))>175:
             print('I do not want to use an elevation angle of less than 5 or more than 175')
             # set all vr to missing
             vr[:,:] = -999
@@ -207,11 +218,14 @@ def wind_estimate_average(vr,el,az,ranges,eff_N,sig_thresh = 9,default_sigma=100
         
         if ((eff_N > 0) & (eff_N < len(foo)-3)):
             N = np.copy(eff_N)
+        elif eff_N == -10:
+            N = int(len(foo)/10)
+            if N < 1:
+                N = len(foo)-3
         else:
             N = len(foo)-3
 
-           
-                
+         
 
         A = np.ones((len(foo),3))
         A[:,0] = np.sin(np.deg2rad(az[foo]))*np.cos(np.deg2rad(el[foo]))
@@ -226,14 +240,14 @@ def wind_estimate_average(vr,el,az,ranges,eff_N,sig_thresh = 9,default_sigma=100
         
         sigma[i] = np.sqrt(np.nansum((vr[foo,i] - A.dot(v0))**2)/N)
         thresh_sigma[i] = np.sqrt(np.nansum((vr[foo,i] - A.dot(v0))**2)/(len(foo) - 3))
-
         # We are going to try this QC. If there is a significant w component
         # determine the uncertainty with no w component
         
         if np.abs(v0[2]) >= 3:
             vh_0 = (np.linalg.pinv(A[:,:-1].T.dot(A[:,:-1]))).dot(A[:,:-1].T).dot(vr[foo,i])
             
-            temp_sigma = np.sqrt(np.nansum((vr[foo,i] - A[:,:-1].dot(vh_0))**2))/(N+1)
+            temp_sigma = np.sqrt(np.nansum((vr[foo,i] - A[:,:-1].dot(vh_0))**2)/(N+1))
+            #temp_sigma = np.sqrt(np.nansum((vr[foo,i] - A[:,:-1].dot(vh_0))**2))/(N+1)
             temp_thresh_sigma = np.sqrt(np.nansum((vr[foo,i] - A[:,:-1].dot(vh_0))**2))/((len(foo) - 3) + 1)
             
             if temp_sigma > sigma[i]:
@@ -244,7 +258,10 @@ def wind_estimate_average(vr,el,az,ranges,eff_N,sig_thresh = 9,default_sigma=100
         # I only consider full azimuth angles
         # do not do this when elevation angle is not unique
         for i_az in range(len(azu)):
-            idx = np.where(np.round(az[foo]) == azu[i_az])[0]
+            if centeredazi == 1:
+                idx = np.where(np.abs(azu[i_az]-az[foo])<=0.5)
+            else:
+                idx = np.where(np.round(az[foo]) == azu[i_az])[0]
             vrzz[i_az,i] = np.mean(vr[foo,i][idx])
     sigma[thresh_sigma > sig_thresh] = default_sigma
     
