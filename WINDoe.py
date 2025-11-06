@@ -161,6 +161,10 @@ if np.max(zz) >= np.max(z):
     print(f'Error: The maximum height in the input vip.grid must be less than {np.max(z):.3f} km')
     VIP_Databases_functions.abort(date)
     sys.exit()
+if np.median(np.diff((zz))) < np.median(np.diff(z)):
+    print(f'Error: The required vertical grid has a much higher vertical resolution than the prior == aborting')
+    VIP_Databases_functions.abort(date)
+    sys.exit()
 if(verbose >= 2):
     print('  Adjusting prior to the defined vertical grid')
 newXa,newSa,_ = Other_functions.interpolate_prior_covariance(z,Xa,Sa,np.full(z.shape,np.nan),zz,verbose=verbose)
@@ -201,7 +205,7 @@ fid.close()
 
 
 if verbose >= 1:
-    print('Retrived profiles will have ' + str(len(z)) + ' levels (from prior)')
+    print('Retrived profiles will have ' + str(len(z)) + ' levels (from vipfile)')
 if verbose >= 2:
     print('There were ' + str(nsonde_prior) + ' radiosondes used in the calculation of the prior')
 # TODO -- Add inflate prior covariance function here
