@@ -114,9 +114,6 @@ def wind_estimate(vr,el,az,ranges,eff_N,sig_thresh = 9,default_sigma=100000,miss
         else:
             N = len(foo)-3
 
-           
-                
-
         A = np.ones((len(foo),3))
         A[:,0] = np.sin(np.deg2rad(az[foo]))*np.cos(np.deg2rad(el[foo]))
         A[:,1] = np.cos(np.deg2rad(az[foo]))*np.cos(np.deg2rad(el[foo]))
@@ -148,6 +145,7 @@ def wind_estimate(vr,el,az,ranges,eff_N,sig_thresh = 9,default_sigma=100000,miss
     
     return sigma, thresh_sigma
 
+# B. Adler: added option in the vipfile to average wind samples
 # This is the ARM VAD function that is used to get error estimates for the radial
 # velocity values
 # radial velocities values are averaged for common full  azimuth to reduce the number of samples used in the retrieval
@@ -171,7 +169,11 @@ def wind_estimate_average(vr,el,az,ranges,eff_N,sig_thresh = 9,default_sigma=100
         #only works when acquisition only happens at distinct azimuth angles
         azu = np.unique(np.round(az))
         centeredazi = 0
+    
     vrzz = np.ones((len(azu),len(ranges)))*np.nan
+
+    # Check if elevation angles are uniform, if not determine angle that occurs most often and use this
+    # code currently does not allow to process multiple elevation angle in one input data set
     if len(np.unique(np.round(el))) > 1:
         print('Elevation angles are not uniform, determine elevation angle that occurs most often and use this')
         elu = np.unique(np.round(el))
@@ -477,6 +479,7 @@ def test_monotonic(x,strict=True):
         return np.all(dx <= 0) or np.all(dx >= 0)    
 
 ################################################################################
+# B. Adler: added this option (logic is the same as in TROPoe)
 # This function interpolates the prior covariance to a different height grid.
 # It first converts the covariance to correlation, and interpolates the correlation
 # matrix to the new height grid.  The variance is interpolated the new height

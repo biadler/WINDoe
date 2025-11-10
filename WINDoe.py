@@ -144,10 +144,10 @@ z = fid.variables['height'][:]
 Xa = np.array(fid.variables['mean_prior'][:])
 Sa = np.array(fid.variables['covariance_prior'][:])
 
-
-# Interpolate the input prior to the new specified height grid
+# B. Adler: Interpolate the input prior to the new specified height grid (zgrid), logic is the same as in TROPoe
+# the new height grid should not be too different (much higher vertical resolution) from the prior height grid, to avoid numerical instabilities
+# TO DO: add improved check to prevent the user from entering too different zgrid
 zz = vip['zgrid']
-#zz = vip['zgrid'].split(',')
 zz = np.array(zz).astype(float)
 if Other_functions.test_monotonic(zz) == False:
     print('Error: The input vip.zgrid is not strictly monotonically ascending -- aborting')
@@ -168,7 +168,8 @@ if np.median(np.diff((zz))) < np.median(np.diff(z)):
 if(verbose >= 2):
     print('  Adjusting prior to the defined vertical grid')
 newXa,newSa,_ = Other_functions.interpolate_prior_covariance(z,Xa,Sa,np.full(z.shape,np.nan),zz,verbose=verbose)
-        # Replace the prior values from the input file with the values on the input zgrid
+
+# Replace the prior values from the input file with the values on the input zgrid
 z  = zz
 Xa = newXa
 Sa = newSa
@@ -1172,8 +1173,6 @@ for i in range(len(rtime)):
         # TODO: Make noise floor part of namelist
         Sy = np.array(Sy)
         foo = np.where((flagY <= 12) & (Sy<1))
-        #I also do not want it for cons_profiler
-        #foo = np.where((flagY <= 12) & (flagY != 4) & (flagY !=5) &  (Sy<1))
         Sy[foo] = 1
         sigY[foo] = 1
         

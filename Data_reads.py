@@ -520,8 +520,11 @@ def read_raw_lidar(date, retz, rtime, vip, verbose):
                         hgt = rngxx*np.sin(np.deg2rad(elxx[ii]))
                         vrzz[ii, :] = np.interp(
                             retz, hgt, vrxx[ii, :], left=-999, right=-999)
-                    
-                    #average radial velocity to reduce number of samples from scanning lidar
+
+                    # B. Adler: added option to the vipfile ['raw_lidar_average_rv'] to reduce number of radial velocity samples from scanning lidar
+                    # this helps to prevent overfitting and to speed up code when sample size is large (large time delta or very fast scans)
+                    # it also helps to obtain reasonable 1-sigma profiles
+
                     if vip['raw_lidar_average_rv'][k] == 1:
                         temp_sig, thresh_sig, temp_vrzz, temp_elxx, temp_azxx = Other_functions.wind_estimate_average(
                             vrzz, elxx, azxx, retz,vip['raw_lidar_eff_N'], vip['raw_lidar_sig_thresh'])
@@ -1346,7 +1349,7 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                     uerr_interp = None
                     verr_interp = None
 
-        # Read in Windcube V1 file
+        # B. Adler: added option to read in Windcube V1 file
         # For the error we are going to use the sum of the wind component standard deviation and mean spectral broadening for 2 min period  
         elif vip['proc_lidar_type'][k] == 4:
             if verbose >= 1:
@@ -1472,7 +1475,7 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                     foo = np.where(u_interp != -999.)[0]
                     if len(foo) > 0:
                         available[k] = 1
-                    
+                    # B. Adler: added option to average u and v components so that only one value per retrieved profile is used 
                     if vip['proc_lidar_average_uv'][k] == 1:
                         # average over time so that one value per profile is used
                         # first replace -999 with nan
@@ -1484,7 +1487,7 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                         verr_interp = np.atleast_2d(np.mean(verr_interp,axis=1)+np.std(v_interp,axis=1)).T
                         u_interp = np.atleast_2d(np.mean(u_interp,axis=1)).T
                         v_interp = np.atleast_2d(np.mean(v_interp,axis=1)).T
-                        # replace nan with nan
+                        # replace nan with -999
                         u_interp[np.isnan(u_interp)] = -999.
                         v_interp[np.isnan(v_interp)] = -999.
                         uerr_interp[np.isnan(uerr_interp)] = -999.
@@ -1500,7 +1503,7 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                     verr_interp = None
             
             
-        # Read in Windcube V2.1 file deployed for WFIP3
+        # B. Adler: added option to read in Windcube V2.1 file
         # For the error we are going to the  mean spectral broadening for 10 min period  
         elif vip['proc_lidar_type'][k] == 5:
             if verbose >= 1:
@@ -1545,18 +1548,6 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                     v_err = fid.variables['doppler_spectral_broadening'][foo,:]
                     fid.close()
 
-                   # # remove mask, because it messes up vstack
-                   # ux = ux.data
-                   # vx = vx.data
-                   # u_err = u_err.data
-                   # v_err = v_err.data
-                    
-                   # # replace 9999 with -999
-                   # ux[ux == -9999] = -999
-                   # vx[vx == -9999] = -999
-                   # u_err[u_err == -9999] = -999
-                   # v_err[v_err == -9999] = -999
-
                     # create normal array with nan
                     ux = ux.filled(np.nan)
                     vx = vx.filled(np.nan)
@@ -1628,8 +1619,8 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                     if len(foo) > 0:
                         available[k] = 1
 
+                    # B. Adler: added option to average u and v components so that only one value per retrieved profile is used
                     if vip['proc_lidar_average_uv'][k] == 1:
-                        # average over time so that one value per profile is used
                         # first replace -999 with nan
                         u_interp[u_interp == -999.] = np.nan
                         v_interp[v_interp == -999.] = np.nan
@@ -1639,7 +1630,7 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                         verr_interp = np.atleast_2d(np.nanmean(verr_interp,axis=1)+np.nanstd(v_interp,axis=1)).T
                         u_interp = np.atleast_2d(np.nanmean(u_interp,axis=1)).T
                         v_interp = np.atleast_2d(np.nanmean(v_interp,axis=1)).T
-                        # replace nan with nan
+                        # replace nan with -999
                         u_interp[np.isnan(u_interp)] = -999.
                         v_interp[np.isnan(v_interp)] = -999.
                         uerr_interp[np.isnan(uerr_interp)] = -999.
@@ -1654,7 +1645,7 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                     uerr_interp = None
                     verr_interp = None
 
-        # Read in Zephir profiles deployed for WFIP3
+        # B. Adler: read in Zephir lidar profiles
         # For the error we are going to use the standard deviation for 10 min period
         elif vip['proc_lidar_type'][k] == 6:
             if verbose >= 1:
@@ -1699,18 +1690,6 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                     v_err = fid.variables['wspd_sigma'][foo,:]
                     fid.close()
 
-                   # # remove mask, because it messes up vstack
-                   # ux = ux.data
-                   # vx = vx.data
-                   # u_err = u_err.data
-                   # v_err = v_err.data
-
-                   # # replace 9999 with -999
-                   # ux[ux == -9999] = -999
-                   # vx[vx == -9999] = -999
-                   # u_err[u_err == -9999] = -999
-                   # v_err[v_err == -9999] = -999
-
                     # create normal array with nan
                     ux = ux.filled(np.nan)
                     vx = vx.filled(np.nan)
@@ -1779,8 +1758,8 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                     if len(foo) > 0:
                         available[k] = 1
 
+                    # B. Adler: added option to average u and v components so that only one value per retrieved profile is used
                     if vip['proc_lidar_average_uv'][k] == 1:
-                        # average over time so that one value per profile is used
                         # first replace -999 with nan
                         u_interp[u_interp == -999.] = np.nan
                         v_interp[v_interp == -999.] = np.nan
@@ -1790,7 +1769,7 @@ def read_proc_lidar(date, retz, rtime, vip, verbose):
                         verr_interp = np.atleast_2d(np.mean(verr_interp,axis=1)+np.std(v_interp,axis=1)).T
                         u_interp = np.atleast_2d(np.mean(u_interp,axis=1)).T
                         v_interp = np.atleast_2d(np.mean(v_interp,axis=1)).T
-                        # replace nan with nan
+                        # replace nan with -999
                         u_interp[np.isnan(u_interp)] = -999.
                         v_interp[np.isnan(v_interp)] = -999.
                         uerr_interp[np.isnan(uerr_interp)] = -999.
@@ -1964,6 +1943,7 @@ def read_prof_cons(date, retz, rtime, vip, verbose):
                     uerr_interp = None
                     verr_interp = None
         elif vip['cons_profiler_type'][k] == 2:
+            # B. Adler: added option to read high-resolution consensus wind profiles in the NOAA PSL format
             if verbose >= 1:
                 print('Reading in NOAA PSL 915 MHz high-resolution consensus winds file')
 
@@ -2116,6 +2096,7 @@ def read_prof_cons(date, retz, rtime, vip, verbose):
                     uerr_interp = None
                     verr_interp = None
         elif vip['cons_profiler_type'][k] == 3:
+            # B. Adler: added option to read low-resolution consensus wind profiles in the NOAA PSL format
             if verbose >= 1:
                 print('Reading in NOAA PSL 915 MHz low-resolution consensus winds file')
 
@@ -2666,8 +2647,7 @@ def read_insitu(date, retz, rtime, vip, verbose):
                     if verr_interp < 1:
                         verr_interp = 1.0
 
-                    # This is all 10-m data
-                    # z_interp = np.array([retz[0]])
+                    # B. Adler: added option to define height of insitu station measurement in vipfile
                     z_interp = np.array([vip['insitu_station_height'][k]/1000])
 
                     u_interp = np.array([u_interp])
@@ -3222,7 +3202,9 @@ def read_insitu(date, retz, rtime, vip, verbose):
                     uerr_interp = None
                     verr_interp = None
                     z_interp = None
-        
+
+        # B. Adler: added option to replicate surface measurement samples (the logic is the same as in TROPoe)
+        # default is insitu_npts = 1
         # Now I need to build arrays for each suface sample, so that I can
         # replicate a point multiple times if desired. I don't want to make each
         # of the replicates the same as the original, so I will insert 1/10th of

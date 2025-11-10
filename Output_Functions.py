@@ -223,21 +223,21 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
             prof_type.comment2 = '2 - NOAA 915 Mhz Profiler high-res'
             prof_type.comment2 = '3 - NOAA 915 Mhz Profiler low-res'
         
+        # B. Adler: count how many observations per type are used at each time stamp
+        obsflag_dim = fid.createDimension('obsflag_dim',None)
+        obscount_flag = fid.createVariable('obscount_flag','i2',('time','obsflag_dim',))
+        obscount_flag.long_name = 'Number of different observation types per profile'
+        obscount_flag.comment1 = 'Counts how many observations of a certain platform are used per profile'
+        obsunique_flag = fid.createVariable('obsunique_flag','i2',('time','obsflag_dim',))
+        obsunique_flag.long_name = 'Unique observations per profile'
+        obsunique_flag.comment1 = 'Flags of unique observations per profile'
+
         if vip['keep_file_small'] == 0:
             nht2 = fid.createDimension('nht2', (nht * 2))
             cov = fid.createVariable('cov', 'f4', ('time', 'nht2', 'nht2'))
             cov.long_name = 'Covariance matrix'
            
-            # count how many observations per type are used at each time stamp
-            obsflag_dim = fid.createDimension('obsflag_dim',None)
-            obscount_flag = fid.createVariable('obscount_flag','i2',('time','obsflag_dim',))
-            obscount_flag.long_name = 'Number of different observation types per profile'
-            obscount_flag.comment1 = 'Counts how many observations of a certain platform are used per profile'
-            obsunique_flag = fid.createVariable('obsunique_flag','i2',('time','obsflag_dim',))
-            obsunique_flag.long_name = 'Unique observations per profile'
-            obsunique_flag.comment1 = 'Flags of unique observations per profile'
-
-            
+            # B. Adler: in addition to covariance matrix, save observations from individual inputs
             # save observation vector, etc, if it is not lidar raw data
             # obsvecidx = np.where(xret['flagY']>1)[0]
             # save observation vector for all data, can get very large if not averaged
@@ -423,17 +423,30 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
             max_hgt = fid.variables[f'{i}_hgt_max']
             max_hgt[fsample] = xret['max_heights'][i]
     
+    # B. Adler: save how many obs per type were used 
+    c = Counter(xret['flagY'])
+    obsflagunique = np.unique(xret['flagY'])
+    obsflagcount = np.full((len(obsflagunique)),np.nan)
+    for i in range(len(obsflagunique)): 
+        obsflagcount[i]=c[obsflagunique[i]]
+    obscount_flag = fid.variables['obscount_flag']
+    obscount_flag[fsample,:] = obsflagcount
+    obsunique_flag = fid.variables['obsunique_flag']
+    obsunique_flag[fsample,:] = obsflagunique
+
+
     # only add the covariance matrix if specified
     if vip['keep_file_small'] == 0:
         cov = fid.variables['cov']
         cov[fsample,:,:] = xret['Sop'][:2*nht,:2*nht]
-
+        
+        # savee observations from each input
         if all(vip['raw_lidar_average_rv']) == 1:
             # for all obs
             obsvecidx = np.where(xret['flagY']>0)[0]
         else:
-           #save observation vector and unertainty, for everything but raw lidar data
-            obsvecidx = np.where(xret['flagY']>1)[0]
+            # save observation vector and unertainty, for everything but raw lidar data
+            # obsvecidx = np.where(xret['flagY']>1)[0]
             # save observation vector for all data, can get very large if not averaged
             obsvecidx = np.where(xret['flagY']>0)[0]
 
@@ -449,17 +462,6 @@ def write_output(vip, globatt, xret, dindices, prior, fsample, exectime, nfilena
             forward_calc = fid.variables['forward_calc']
             forward_calc[fsample,:] = xret['FXn'][obsvecidx]
             
-            # save how many obs per type were used 
-            c = Counter(xret['flagY'])
-            obsflagunique = np.unique(xret['flagY'])
-            obsflagcount = np.full((len(obsflagunique)),np.nan)
-            for i in range(len(obsflagunique)): 
-                obsflagcount[i]=c[obsflagunique[i]]
-            obscount_flag = fid.variables['obscount_flag']
-            obscount_flag[fsample,:] = obsflagcount
-            obsunique_flag = fid.variables['obsunique_flag']
-            obsunique_flag[fsample,:] = obsflagunique
-
 
     
     fid.close()
