@@ -162,7 +162,10 @@ def wind_estimate_average(vr,el,az,ranges,eff_N,sig_thresh = 9,default_sigma=100
     hist,bin_edges = np.histogram(az,np.arange(-0.5,360.5,1))
     if len(np.where(hist==1)[0])>1:
         print('search for unique azimuth angles within 1 deg bins')
-        idx = np.where(hist>1)
+        # require at least  25% of np.max(hist) or at least 1 values per bin to consider
+        # for long averaging period and continuous scanning angles during movement will be picked otherwise
+        nmax = np.max([np.max(hist)*0.25,1])
+        idx = np.where(hist>nmax)
         azu = bin_edges[idx]+0.5 #unique azimuth angles centered
         centeredazi = 1
     else:
