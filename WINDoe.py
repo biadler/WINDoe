@@ -629,6 +629,11 @@ for i in range(len(rtime)):
     azY = np.array(azY)
     elY = np.array(elY)
 
+    # Check to make sure that observation vector is not empty
+    # If yes, move on
+    if len(Y) == 0:
+        print('no data in observation vector. Skipping sample.')
+        continue
      
     zmin = np.nanmin(dimY)
     zmax = np.nanmax(dimY)
